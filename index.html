@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prompt Analyzer Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen p-4 md:p-8">
+
+    <div class="max-w-4xl mx-auto">
+        <header class="mb-8 text-center">
+            <h1 class="text-4xl font-black text-slate-800 mb-2">Prompt Analyzer Pro</h1>
+            <p class="text-slate-600">ניתוח, שיפור ושמירת פרומטים חכמים</p>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="bg-white p-6 rounded-3xl shadow-xl border border-slate-200">
+                <textarea id="promptInput" rows="10" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-200 outline-none transition" placeholder="הדבק כאן את הפרומט שלך..."></textarea>
+                <div class="flex gap-2 mt-4">
+                    <button onclick="analyzePrompt()" class="flex-1 bg-slate-900 text-white py-4 rounded-2xl font-bold hover:bg-blue-600 transition">נתח פרומט</button>
+                    <button onclick="savePrompt()" class="bg-emerald-600 text-white px-6 rounded-2xl font-bold hover:bg-emerald-700 transition">💾 שמור</button>
+                </div>
+            </div>
+
+            <div id="resultsDashboard" class="hidden">
+                <div class="bg-white p-6 rounded-3xl shadow-xl border border-slate-200 h-full">
+                    <div id="scoreDisplay" class="text-center mb-6"></div>
+                    <div id="feedbackOutput" class="space-y-4"></div>
+                </div>
+            </div>
+        </div>
+
+        <section class="mt-12">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold">הספריה שלי</h2>
+                <div class="flex gap-2">
+                    <button onclick="exportData()" class="text-xs bg-slate-200 px-3 py-1 rounded-lg hover:bg-slate-300">ייצוא (גיבוי)</button>
+                    <input type="file" id="importFile" class="hidden" onchange="importData(event)">
+                    <button onclick="document.getElementById('importFile').click()" class="text-xs bg-slate-200 px-3 py-1 rounded-lg hover:bg-slate-300">ייבוא</button>
+                </div>
+            </div>
+            <div id="libraryList" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        </section>
+    </div>
+
+    <script>
+        let currentPrompt = "";
+
+        function analyzePrompt() {
+            const prompt = document.getElementById('promptInput').value.trim();
+            if (!prompt) return;
+            currentPrompt = prompt;
+
+            let score = 20;
+            const positive = [];
+            const negative = [];
+            
+            if (/מנהל|מומחה|יועץ|בתור/i.test(prompt)) { score += 30; positive.push("✅ תפקיד מוגדר."); } 
+            else { negative.push("❌ חסרה הגדרת תפקיד."); }
+
+            if (/טבלה|רשימה|פורמט|מגבלות|לא לכתוב/i.test(prompt)) { score += 30; positive.push("✅ אילוצים מוגדרים."); } 
+            else { negative.push("❌ חסרים אילוצים (פורמט פלט)."); }
+
+            if (prompt.length > 50) { score += 20; positive.push("✅ משימה מפורטת."); } 
+            else { negative.push("❌ המשימה קצרה מדי."); }
+
+            const improved = `בתור מומחה, בצע את המשימה הבאה: "${prompt}".\n\nדרישות ביצוע:\n- ניתוח מעמיק ומקצועי.\n- הגשת תוצאות בפורמט מסודר (טבלה/רשימה).\n- הקפדה על דיוק עובדתי ושפה עסקית.`;
+
+            document.getElementById('resultsDashboard').classList.remove('hidden');
+            document.getElementById('scoreDisplay').innerHTML = `<div class="text-6xl font-black ${score > 70 ? 'text-emerald-600' : 'text-amber-600'}">${score}</div><div class="text-slate-400">ציון איכות</div>`;
+            document.getElementById('feedbackOutput').innerHTML = `
+                <div class="bg-emerald-50 p-4 rounded-2xl"><h4 class="font-bold text-emerald-800 text-sm">נקודות לשימור</h4><p class="text-xs text-emerald-700">${positive.join('<br>')}</p></div>
+                <div class="bg-amber-50 p-4 rounded-2xl"><h4 class="font-bold text-amber-800 text-sm">נקודות לשיפור</h4><p class="text-xs text-amber-700">${negative.join('<br>')}</p></div>
+                <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100"><h4 class="font-bold text-blue-800 text-sm">🚀 הצעה משופרת</h4><p class="text-xs text-blue-900">${improved}</p></div>
+            `;
+        }
+
+        function savePrompt() {
+            if (!currentPrompt) return alert("נתח פרומט לפני השמירה!");
+            const library = JSON.parse(localStorage.getItem('myPrompts') || '[]');
+            library.push(currentPrompt);
+            localStorage.setItem('myPrompts', JSON.stringify(library));
+            renderLibrary();
+        }
+
+        function renderLibrary() {
+            const list = document.getElementById('libraryList');
+            const library = JSON.parse(localStorage.getItem('myPrompts') || '[]');
+            list.innerHTML = library.map(p => `<div class="bg-white p-4 rounded-2xl shadow border border-slate-200 text-xs italic">${p}</div>`).join('');
+        }
+
+        function exportData() {
+            const data = localStorage.getItem('myPrompts');
+            const blob = new Blob([data], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'my-prompts.json';
+            a.click();
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                localStorage.setItem('myPrompts', e.target.result);
+                renderLibrary();
+            };
+            reader.readAsText(file);
+        }
+
+        renderLibrary();
+    </script>
+</body>
+</html>
