@@ -3,53 +3,51 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@400;500;600;700&display=swap">
 <style>
-/* Layout: gunner's station — the eyepiece dominates, an instrument panel sits to its right (stacks below on phones).
-   Single dark look by choice: it is a sight housing, it reads the same on any host theme. */
+/* Layout: the eyepiece dominates; a short trainee panel sits beside it (below on phones, with a fixed
+   weapon bar). Instructor tools live in a separate drawer. Single dark look by choice: a sight housing. */
 :root{
-  --housing:#0c0f0d;      /* sight housing / page */
-  --panel:#151a17;        /* instrument panel */
-  --panel-2:#1c231f;      /* raised controls */
-  --line:#2a332d;         /* hairlines */
-  --fg:#dfe5dd;           /* primary text */
-  --muted:#8e9a90;        /* secondary text */
-  --accent:#e2a63b;       /* amber: active control, armed state */
-  --ok:#5fb37c; --bad:#e0644f; --warn:#e2a63b;
-  /* Figure 2 element colours */
+  --housing:#0c0f0d; --panel:#151a17; --panel-2:#1c231f; --line:#2a332d;
+  --fg:#dfe5dd; --muted:#8e9a90; --accent:#e2a63b; --ok:#62c184; --bad:#ec6a52;
   --c-zero:#f2f2f2; --c-stadia:#a274d6; --c-fin:#4f86e0; --c-hesh:#e07a2e; --c-coax:#2fae88; --c-lead:#9aa3ad; --c-unk:#e0503f;
   --f-ui:"IBM Plex Sans Condensed","Arial Narrow",system-ui,sans-serif;
-  --f-data:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  --f-data:"IBM Plex Mono",ui-monospace,Menlo,monospace;
   color-scheme:dark;
 }
 html,body{height:100%}
-body{background:var(--housing);color:var(--fg);font-family:var(--f-ui);font-size:14px;line-height:1.4;
+body{background:var(--housing);color:var(--fg);font-family:var(--f-ui);font-size:14px;line-height:1.4;margin:0;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px;box-sizing:border-box}
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 button,input,select{font:inherit;color:inherit}
-.app{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:16px;height:100%;min-height:0}
-@media (max-width:900px){.app{grid-template-columns:minmax(0,1fr);height:auto}}
+.app{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;height:100%;min-height:0}
 
-/* ---------- sight ---------- */
-.sight-col{display:flex;flex-direction:column;align-items:center;gap:10px;min-width:0;min-height:0}
+/* sight */
+.sight-col{display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0;min-height:0}
 .sight-wrap{position:relative;width:100%;flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
-.sight{position:relative;aspect-ratio:1/1;max-width:100%;max-height:100%;touch-action:none;cursor:crosshair;user-select:none;-webkit-user-select:none}
+.sight{position:relative;aspect-ratio:1/1;touch-action:none;cursor:crosshair;user-select:none;-webkit-user-select:none;outline:none}
 .sight canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 .sight .mask{position:absolute;inset:0;pointer-events:none;
   background:radial-gradient(circle closest-side at 50% 50%,transparent 0,transparent 78%,rgba(0,0,0,.3) 91%,rgba(0,0,0,.82) 98.4%,var(--housing) 100%)}
 .sight .blast{position:absolute;inset:0;pointer-events:none;opacity:0;border-radius:50%;
   background:radial-gradient(circle closest-side at 50% 60%,rgba(168,152,122,.9),rgba(132,118,94,.8) 60%,rgba(90,80,64,.55) 100%)}
-.sight .ring{position:absolute;inset:0;border-radius:50%;box-shadow:0 0 0 2px #050605 inset, 0 0 0 1px #2d3530;pointer-events:none}
-.statusbar{display:flex;gap:18px;flex-wrap:wrap;justify-content:center;font-family:var(--f-data);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.sight .ring{position:absolute;inset:0;border-radius:50%;box-shadow:0 0 0 2px #050605 inset,0 0 0 1px #2d3530;pointer-events:none}
+.sight:focus-visible .ring{box-shadow:0 0 0 2px #050605 inset,0 0 0 2px var(--accent)}
+.callout{position:absolute;left:50%;top:9%;transform:translateX(-50%);text-align:center;pointer-events:none;opacity:0;transition:opacity .25s;
+  font-family:var(--f-ui);font-weight:700;letter-spacing:.06em;text-shadow:0 1px 3px rgba(0,0,0,.85),0 0 1px #000;white-space:nowrap}
+.callout .main{font-size:clamp(18px,3.4vmin,30px)}
+.callout .main.hit{color:#7ef0a2}.callout .main.miss{color:#ffd28a}
+.callout .destroyed{margin-top:4px;font-size:clamp(20px,4.2vmin,38px);color:#ff5a3c;background:rgba(10,8,6,.62);padding:3px 14px;border:2px solid #ff5a3c;border-radius:3px;display:none}
+.callout.show{opacity:1}
+.statusbar{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;font-family:var(--f-data);font-size:12px;color:var(--muted)}
 .statusbar b{color:var(--fg);font-weight:500}
 .chip{display:inline-block;padding:1px 7px;border:1px solid var(--line);border-radius:3px;font-family:var(--f-data);font-size:11px;letter-spacing:.04em}
 .chip.armed{border-color:var(--accent);color:var(--accent)}
-.chip.loading{border-color:var(--line);color:var(--muted)}
 
-/* ---------- panel ---------- */
+/* panel */
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;overflow:auto;min-height:0;display:flex;flex-direction:column}
 .sec{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
 .sec:last-child{border-bottom:0}
-.brand{gap:2px}
-.brand h1{font-size:21px;font-weight:700;margin:0;letter-spacing:.01em;text-wrap:balance}
+.brand h1{font-size:21px;font-weight:700;margin:0;text-wrap:balance}
 .brand p{margin:0;color:var(--muted);font-size:12.5px}
 h2{font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0}
 .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
@@ -60,574 +58,588 @@ h2{font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
 .seg button .n{font-weight:600;font-size:14px}
 .seg button[aria-pressed="true"]{background:var(--accent);color:#1a1405}
 .seg button[aria-pressed="true"] .k{color:#3d2e0b}
-.seg.small button{padding:6px 4px}
-.seg.small button .n{font-size:12.5px}
 button.btn{background:var(--panel-2);border:1px solid var(--line);border-radius:4px;padding:7px 12px;cursor:pointer;font-weight:500}
 button.btn:hover,.seg button:hover{filter:brightness(1.15)}
 button.btn.primary{background:var(--accent);border-color:var(--accent);color:#1a1405;font-weight:600}
+button.btn.fire{background:#7a2a1c;border-color:#b0412b;color:#fff;font-weight:700;letter-spacing:.08em}
 button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
-.toggles{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .tog{display:flex;align-items:center;gap:8px;background:var(--panel-2);border:1px solid var(--line);border-radius:4px;padding:7px 9px;cursor:pointer;text-align:left}
 .tog .dot{width:9px;height:9px;border-radius:50%;border:1px solid var(--muted);flex:none}
 .tog[aria-pressed="true"]{border-color:var(--accent)}
 .tog[aria-pressed="true"] .dot{background:var(--accent);border-color:var(--accent)}
 .tog .kbd{margin-left:auto;font-family:var(--f-data);font-size:10px;color:var(--muted)}
-select,input[type=number],input[type=text]{background:var(--housing);border:1px solid var(--line);border-radius:4px;padding:6px 8px;min-width:0}
-input[type=number]{font-family:var(--f-data);width:100px}
+select,input[type=number]{background:var(--housing);border:1px solid var(--line);border-radius:4px;padding:6px 8px;min-width:0}
+input[type=number]{font-family:var(--f-data);width:110px}
 label.field{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--muted)}
 .prompt{background:var(--housing);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:4px;padding:8px 10px;font-size:13px}
-.readout{font-family:var(--f-data);font-size:12px;line-height:1.55;font-variant-numeric:tabular-nums;color:var(--fg)}
-.readout .hit{color:var(--ok)} .readout .miss{color:var(--bad)}
+.feedback{font-size:15px;font-weight:600}
+.feedback .hit{color:var(--ok)} .feedback .miss{color:var(--bad)}
+.feedback small{display:block;font-weight:400;font-size:12px;color:var(--muted);margin-top:2px}
 .note{font-size:12px;color:var(--muted);margin:0}
-table{border-collapse:collapse;width:100%;font-family:var(--f-data);font-size:11.5px;font-variant-numeric:tabular-nums}
-th,td{padding:4px 6px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
-th{color:var(--muted);font-weight:500;font-family:var(--f-ui);font-size:11px;letter-spacing:.03em}
-th:first-child,td:first-child{text-align:left}
-.tbl{overflow-x:auto;max-height:240px;overflow-y:auto}
-td.fail{color:var(--bad)} td.pass{color:var(--ok)}
-details>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px}
-details>summary::-webkit-details-marker{display:none}
-details>summary::before{content:"▸";color:var(--muted);font-size:11px}
-details[open]>summary::before{content:"▾"}
-.params{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.params input{width:100%}
-
-/* explain card */
-.explain{display:none}
-.explain.on{display:flex}
 .card{background:var(--housing);border:1px solid var(--line);border-left:4px solid var(--c);border-radius:4px;padding:10px 12px;display:flex;flex-direction:column;gap:5px}
 .card h3{margin:0;font-size:16px;font-weight:700;color:var(--c);display:flex;align-items:center;gap:8px}
 .card .badge{width:20px;height:20px;border-radius:50%;background:var(--c);color:#111;font-size:11.5px;display:inline-grid;place-items:center;font-weight:700;flex:none}
 .card p{margin:0;font-size:13px}
+.card .use{color:var(--fg);font-weight:600}
 .card .facts{font-family:var(--f-data);font-size:11.5px;color:var(--muted);line-height:1.5}
 .legend{display:flex;flex-wrap:wrap;gap:6px}
 .legend button{display:flex;align-items:center;gap:6px;background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:3px 9px 3px 4px;cursor:pointer;font-size:12px}
 .legend button .badge{width:16px;height:16px;border-radius:50%;background:var(--c);color:#111;font-size:10px;display:inline-grid;place-items:center;font-weight:700}
 .legend button[aria-pressed="true"]{border-color:var(--c)}
 .steps{margin:0;padding-left:18px;font-size:12.5px;display:flex;flex-direction:column;gap:3px}
-.steps b{font-weight:600}
 .keys{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:12px}
-.keys kbd{font-family:var(--f-data);font-size:11px;background:var(--panel-2);border:1px solid var(--line);border-radius:3px;padding:0 5px;color:var(--fg);justify-self:start}
+.keys kbd{font-family:var(--f-data);font-size:11px;background:var(--panel-2);border:1px solid var(--line);border-radius:3px;padding:0 5px;justify-self:start}
 .keys span{color:var(--muted)}
-.touchbar{display:none;gap:8px;width:100%}
-@media (pointer:coarse){.touchbar{display:flex}}
-.touchbar button{flex:1;padding:12px}
+.foot{margin-top:auto}
+
+/* instructor drawer */
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(460px,100%);background:var(--panel);border-left:1px solid var(--line);z-index:20;
+  overflow:auto;transform:translateX(102%);transition:transform .22s ease;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);padding-right:env(safe-area-inset-right,0px)}
+.drawer.open{transform:none}
+.drawer header{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel);z-index:1}
+.drawer header h2{font-size:12px;color:var(--accent)}
+.toggles{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+table{border-collapse:collapse;width:100%;font-family:var(--f-data);font-size:11.5px;font-variant-numeric:tabular-nums}
+th,td{padding:4px 6px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th{color:var(--muted);font-weight:500;font-family:var(--f-ui);font-size:11px}
+th:first-child,td:first-child{text-align:left}
+.tbl{overflow-x:auto;max-height:260px;overflow-y:auto}
+td.fail{color:var(--bad)} td.pass{color:var(--ok)}
+.params{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.params input{width:100%}
+.readout{font-family:var(--f-data);font-size:12px;color:var(--muted)}
+.readout b{color:var(--fg);font-weight:500}
+
+/* phone: weapon bar fixed at the bottom so ammo and fire never need scrolling */
+.mbar{display:none}
+@media (max-width:900px){
+  .app{grid-template-columns:minmax(0,1fr);height:auto;padding-bottom:132px}
+  .sec.weapon{display:none}
+  .mbar{display:grid;position:fixed;left:0;right:0;bottom:0;z-index:10;gap:8px;background:rgba(12,15,13,.96);border-top:1px solid var(--line);
+    grid-template-columns:1fr 1fr 1fr;grid-template-rows:auto auto;
+    padding:10px max(16px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+  .mbar .seg{grid-column:1/-1}
+  .mbar .seg button{padding:9px 4px}
+  .mbar button.fire{grid-column:2/4;padding:12px;font-size:16px}
+  .mbar .small{display:flex;gap:6px}
+  .mbar .small button{flex:1;padding:6px 4px;font-size:12px}
+}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 
 <div class="app">
   <div class="sight-col">
     <div class="sight-wrap" id="sightWrap">
-      <div class="sight" id="sight" tabindex="0" aria-label="Gunner's auxiliary sight view. Drag to lay the gun, Space to fire.">
+      <div class="sight" id="sight" tabindex="0" aria-label="Gunner's auxiliary sight. Drag to lay the gun, Space to fire.">
         <canvas id="gl"></canvas>
         <div class="blast" id="blast"></div>
         <div class="mask"></div>
         <canvas id="ov"></canvas>
         <div class="ring"></div>
+        <div class="callout" id="callout"><div class="main" id="calloutMain"></div><div class="destroyed" id="calloutKill">TARGET DESTROYED</div></div>
       </div>
     </div>
-    <div class="statusbar" id="statusbar">
+    <div class="statusbar">
       <span>AMMO <b id="sbAmmo">HESH</b></span>
-      <span id="sbState" class="chip armed">LOADED</span>
-      <span class="chip armed" title="GAS firing always uses the manual override (GAS-08)">MAN OVRD</span>
-      <span>TRAV <b id="sbAz">0.0</b> mrad</span>
-      <span>ELEV <b id="sbEl">0.0</b> mrad</span>
-      <span>BALLISTICS <b id="sbMode">MODEL</b></span>
-    </div>
-    <div class="touchbar">
-      <button class="btn" id="tFine">Fine lay</button>
-      <button class="btn primary" id="tFire">Fire</button>
+      <span id="sbState" class="chip armed">HESH LOADED</span>
+      <span class="chip armed" title="Firing from the GAS uses the manual override">MAN OVRD</span>
     </div>
   </div>
 
-  <aside class="panel" aria-label="Trainer controls">
+  <aside class="panel" aria-label="Trainer">
     <div class="sec brand">
       <h1>GAS Gunnery Trainer</h1>
-      <p>Challenger 2 · Gunner's Auxiliary Sight · ×8 fixed · reticle per Requirements Spec (appendix geometry, mrad)</p>
+      <p>Challenger 2 emergency sight · ×8 fixed · slaved to the gun, not stabilised</p>
     </div>
 
-    <div class="sec explain" id="explainSec">
-      <h2>Explain mode · what each mark is for</h2>
+    <div class="sec" id="explainSec" hidden>
+      <h2>What each mark is for</h2>
       <div class="legend" id="legend"></div>
-      <div class="card" id="card" style="--c:var(--c-lead)"></div>
+      <div class="card" id="card" style="--c:var(--c-hesh)"></div>
       <ol class="steps">
         <li><b>Estimate range.</b> Fit the target in the range estimator.</li>
         <li><b>Pick your scale.</b> FIN or HESH for the main gun, COAX for the MG.</li>
         <li><b>Aim and fire.</b> Centre column if still; lead marks if moving.</li>
       </ol>
-      <p class="note">Hover any mark in the sight. Functions per Figure 2 of the spec; computed facts use the current ballistic model.</p>
     </div>
 
-    <div class="sec">
+    <div class="sec weapon">
       <h2>Weapon</h2>
-      <div class="seg" id="ammoSeg" role="group" aria-label="Ammunition">
-        <button data-ammo="FIN" aria-pressed="false"><span class="n">FIN</span><span class="k">1 · KE</span></button>
-        <button data-ammo="HESH" aria-pressed="true"><span class="n">HESH</span><span class="k">2 · HE</span></button>
-        <button data-ammo="COAX" aria-pressed="false"><span class="n">COAX</span><span class="k">3 · 7.62 MG</span></button>
+      <div class="seg ammoSeg" role="group" aria-label="Ammunition">
+        <button data-ammo="FIN" aria-pressed="false"><span class="n">FIN</span><span class="k">1</span></button>
+        <button data-ammo="HESH" aria-pressed="true"><span class="n">HESH</span><span class="k">2</span></button>
+        <button data-ammo="COAX" aria-pressed="false"><span class="n">COAX</span><span class="k">3</span></button>
       </div>
-      <div class="readout" id="lastShot">No rounds fired yet. Lay a mark on a target and press Space.</div>
+      <button class="btn fire" data-fire>FIRE · Space</button>
     </div>
 
     <div class="sec">
-      <h2>Scenario</h2>
+      <h2>Last shot</h2>
+      <div class="feedback" id="feedback"><span style="color:var(--muted);font-weight:400;font-size:13px">Lay the mark for the range on the target and fire.</span></div>
+    </div>
+
+    <div class="sec">
+      <h2>Exercise</h2>
       <div class="row">
-        <select id="scenario" aria-label="Scenario">
-          <option value="range">Free range · 12 targets</option>
-          <option value="estimate">Range estimation drill</option>
-          <option value="stationary">Stationary engagement</option>
+        <select id="scenario" aria-label="Exercise">
+          <option value="range">Free range · 300–2,900 m</option>
+          <option value="estimate">Range estimation</option>
+          <option value="stationary">Stationary target</option>
           <option value="moving">Moving target</option>
         </select>
         <button class="btn" id="btnNext">Next target</button>
       </div>
       <div class="prompt" id="prompt"></div>
-      <div class="row">
+      <div class="row" style="align-items:flex-end">
         <label class="field">Your range estimate (m)
           <input type="number" id="estimate" min="100" max="5000" step="50" placeholder="e.g. 1200">
         </label>
-        <button class="btn" id="btnCheck">Check estimate</button>
+        <button class="btn" id="btnCheck">Check</button>
       </div>
     </div>
 
     <div class="sec">
-      <h2>Views &amp; settings</h2>
-      <div class="toggles">
-        <button class="tog" id="tgExplain" aria-pressed="false"><span class="dot"></span>Explain mode<span class="kbd">E</span></button>
-        <button class="tog" id="tgDev" aria-pressed="false"><span class="dot"></span>Dev overlay<span class="kbd">G</span></button>
-        <button class="tog" id="tgZoom" aria-pressed="false"><span class="dot"></span>Dev zoom ×3<span class="kbd">Z</span></button>
-        <button class="tog" id="tgDisp" aria-pressed="true"><span class="dot"></span>Dispersion<span class="kbd">D</span></button>
-        <button class="tog" id="tgVib" aria-pressed="true"><span class="dot"></span>Hull vibration<span class="kbd">V</span></button>
-        <button class="tog" id="tgBlast" aria-pressed="true"><span class="dot"></span>Firing obscuration<span class="kbd">O</span></button>
-      </div>
-      <div>
-        <div class="seg small" id="modeSeg" role="group" aria-label="Ballistic source">
-          <button data-mode="model" aria-pressed="true"><span class="n">Physics model</span><span class="k">B · default</span></button>
-          <button data-mode="reticle" aria-pressed="false"><span class="n">Reticle-ideal</span><span class="k">A · every mark true</span></button>
-        </div>
-      </div>
-      <p class="note" id="modeNote"></p>
-    </div>
-
-    <div class="sec">
-      <div class="row" style="justify-content:space-between">
-        <h2>Engagement metrics · GAS-13</h2>
-        <button class="btn" id="btnCopy">Copy shot log CSV</button>
-      </div>
-      <div class="tbl"><table id="engTbl"><thead><tr><th>#</th><th>Target</th><th>True m</th><th>Est. m</th><th>Rds</th><th>1st rd s</th><th>Hit s</th></tr></thead><tbody></tbody></table></div>
-      <p class="note" id="copyNote">Engagements start when a round lands within 15 mrad of a target.</p>
-    </div>
-
-    <div class="sec">
-      <details id="balDetails">
-        <summary><h2>Ballistic verification · spec 6.1 / GAS-05</h2></summary>
-        <div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">
-          <p class="note">Elevation the model needs to hit at each range vs. the reticle mark. A miss over 0.1 mrad fails GAS-05. Edit the model to see the reticle fit change.</p>
-          <div class="tbl" style="max-height:none"><table id="balTbl"><thead><tr><th>Round</th><th>Range</th><th>Reticle Y</th><th>Model Y</th><th>Ratio</th><th>Miss mrad</th><th>Miss m</th><th>TOF s</th></tr></thead><tbody></tbody></table></div>
-          <div class="params">
-            <label class="field">FIN muzzle velocity (m/s)<input type="number" id="pFinV" step="5"></label>
-            <label class="field">FIN velocity loss (m/s per km)<input type="number" id="pFinL" step="1"></label>
-            <label class="field">HESH muzzle velocity (m/s)<input type="number" id="pHeshV" step="5"></label>
-            <label class="field">HESH ballistic coeff. G1 (kg/m²)<input type="number" id="pHeshBC" step="10"></label>
-            <label class="field">HESH drift k (m·s<sup>−1.83</sup>)<input type="number" id="pHeshK" step="0.01"></label>
-            <label class="field">Coax muzzle velocity (m/s)<input type="number" id="pCoaxV" step="5"></label>
-            <label class="field">Coax ballistic coeff. G1 (kg/m²)<input type="number" id="pCoaxBC" step="5"></label>
-            <div style="display:flex;align-items:flex-end"><button class="btn" id="btnReset">Reset to spec values</button></div>
-          </div>
-          <p class="note">Defaults: spec 6.1 preliminary model (point mass, ISA, no wind, no jump). FIN 1,650 m/s sits ~8% low against the reticle; 1,590 m/s fits (open gap 11). HESH G1 coefficient fitted to the spec's estimate column. Coax: 7.62 mm, assumed values. HESH drift k fitted to the column's lateral offset (GAS-06).</p>
-        </div>
-      </details>
-    </div>
-
-    <div class="sec">
-      <h2>Controls</h2>
+      <button class="tog" id="tgExplain" aria-pressed="false"><span class="dot"></span>Explain the sight<span class="kbd">E</span></button>
       <div class="keys">
-        <kbd>Drag</kbd><span>Lay the gun (sight is slaved to it). Shift = fine</span>
-        <kbd>Arrows</kbd><span>Traverse &amp; elevate. Shift fine, Ctrl fast slew</span>
-        <kbd>Wheel</kbd><span>Fine elevation, 0.1 mrad per notch</span>
+        <kbd>Drag</kbd><span>Lay the gun. Shift = fine</span>
+        <kbd>Arrows</kbd><span>Traverse / elevate. Shift fine, Ctrl fast</span>
+        <kbd>Wheel</kbd><span>Fine elevation</span>
         <kbd>1 2 3</kbd><span>FIN · HESH · COAX (main gun reloads 6 s)</span>
-        <kbd>Space</kbd><span>Fire (hold for coax bursts)</span>
-        <kbd>E G Z</kbd><span>Explain · Dev overlay · Dev zoom at cursor</span>
+        <kbd>Space</kbd><span>Fire (hold for coax)</span>
         <kbd>N</kbd><span>Next target</span>
       </div>
-      <p class="note">Source: reticle reconstructed from the Requirements Spec appendix (364 primitives). Not official customer data. Assumptions are flagged in the explain cards and the dev overlay.</p>
+    </div>
+
+    <div class="sec foot">
+      <button class="btn" id="btnInstr">Instructor ▸</button>
     </div>
   </aside>
 </div>
 
+<!-- phone weapon bar -->
+<div class="mbar" aria-label="Weapon controls">
+  <div class="seg ammoSeg" role="group" aria-label="Ammunition">
+    <button data-ammo="FIN" aria-pressed="false"><span class="n">FIN</span></button>
+    <button data-ammo="HESH" aria-pressed="true"><span class="n">HESH</span></button>
+    <button data-ammo="COAX" aria-pressed="false"><span class="n">COAX</span></button>
+  </div>
+  <div class="small"><button class="btn" id="mExplain">Explain</button><button class="btn" id="mFine">Fine</button></div>
+  <button class="btn fire" data-fire>FIRE</button>
+</div>
+
+<!-- instructor drawer: not part of the trainee view -->
+<aside class="drawer" id="drawer" aria-label="Instructor" aria-hidden="true">
+  <header><h2>Instructor</h2><button class="btn" id="btnInstrClose">Close</button></header>
+  <div class="sec">
+    <h2>Views</h2>
+    <div class="toggles">
+      <button class="tog" id="tgDev" aria-pressed="false"><span class="dot"></span>Dev overlay<span class="kbd">G</span></button>
+      <button class="tog" id="tgZoom" aria-pressed="false"><span class="dot"></span>Dev zoom ×3<span class="kbd">Z</span></button>
+      <button class="tog" id="tgDisp" aria-pressed="true"><span class="dot"></span>Dispersion</button>
+      <button class="tog" id="tgVib" aria-pressed="true"><span class="dot"></span>Hull vibration</button>
+      <button class="tog" id="tgBlast" aria-pressed="true"><span class="dot"></span>Firing obscuration</button>
+      <button class="tog" id="tgModel" aria-pressed="false"><span class="dot"></span>Fly the physics model</button>
+    </div>
+    <p class="note">Trainees fly reticle-true ballistics: laying the correct mark hits. “Fly the physics model” fires the spec 6.1 model instead, so its disagreement with the reticle shows as misses.</p>
+    <div class="readout">TRAV <b id="rAz">0.0</b> mrad · ELEV <b id="rEl">0.0</b> mrad · ballistics <b id="rMode">reticle</b></div>
+  </div>
+  <div class="sec">
+    <div class="row" style="justify-content:space-between"><h2>Engagements · GAS-13</h2><button class="btn" id="btnCopy">Copy shot log CSV</button></div>
+    <div class="tbl"><table id="engTbl"><thead><tr><th>#</th><th>Target</th><th>True m</th><th>Est. m</th><th>Rds</th><th>1st rd s</th><th>Hit s</th></tr></thead><tbody></tbody></table></div>
+    <p class="note" id="copyNote">An engagement starts when a round lands within 15 mrad of a target.</p>
+  </div>
+  <div class="sec">
+    <h2>Ballistic verification · spec 6.1</h2>
+    <p class="note">Reticle Y = booklet values (not adjusted). Model Y = elevation the spec 6.1 model needs to hit. A miss over 0.1 mrad fails GAS-05.</p>
+    <div class="tbl" style="max-height:none"><table id="balTbl"><thead><tr><th>Round</th><th>Range</th><th>Reticle Y</th><th>Model Y</th><th>Model/Reticle</th><th>Miss mrad</th><th>Miss m</th></tr></thead><tbody></tbody></table></div>
+    <div class="params">
+      <label class="field">FIN muzzle velocity (m/s)<input type="number" id="pFinV" step="5"></label>
+      <label class="field">FIN velocity loss (m/s per km)<input type="number" id="pFinL" step="1"></label>
+      <label class="field">HESH muzzle velocity (m/s)<input type="number" id="pHeshV" step="5"></label>
+      <label class="field">HESH G1 coefficient (kg/m²)<input type="number" id="pHeshBC" step="10"></label>
+      <label class="field">HESH drift k<input type="number" id="pHeshK" step="0.01"></label>
+      <label class="field">Coax muzzle velocity (m/s)<input type="number" id="pCoaxV" step="5"></label>
+      <label class="field">Coax G1 coefficient (kg/m²)<input type="number" id="pCoaxBC" step="5"></label>
+      <div style="display:flex;align-items:flex-end"><button class="btn" id="btnReset">Reset to spec values</button></div>
+    </div>
+    <p class="note">Model defaults: spec 6.1 (point mass, ISA, no wind, no jump). HESH L31 670 m/s; FIN 1,650 m/s, 60 m/s loss per km; coax 7.62 mm assumed. Range-estimator reference height implied by the booklet stadia: <b id="hRef"></b> m (targets are built to it).</p>
+  </div>
+</aside>
+
 <script type="text/plain" id="reticleCsv">layer,item,range_m,side,prim,text,x1,y1,x2,y2,r
-Zero,zero circle,,C,circle,,0.00,0.00,,,0.50
+Zero,zero circle,,C,circle,,0.00,0.00,,,0.59
 Zero,zero circle,,C,dot,,0.00,0.00,,,
-Stadia,base line,,C,line,,3.82,-0.03,15.56,-0.03,
-Stadia,range dash,600,C,line,,3.93,-3.26,5.28,-3.26,
-Stadia,range dash,800,C,line,,5.39,-2.42,6.74,-2.42,
-Stadia,range dash,1000,C,line,,6.80,-1.94,8.20,-1.94,
-Stadia,range dash,1200,C,line,,8.26,-1.60,9.61,-1.60,
-Stadia,range dash,1400,C,line,,9.72,-1.38,11.13,-1.38,
-Stadia,range dash,1600,C,line,,11.18,-1.21,12.53,-1.21,
-Stadia,range dash,1800,C,line,,12.59,-1.07,13.99,-1.07,
-Stadia,range dash,2000,C,line,,14.05,-0.98,15.45,-0.98,
-Coax,range line,200,C,line,,-17.42,1.55,-15.34,1.55,
-Coax,range line,300,C,line,,-17.47,2.47,-15.34,2.47,
-Coax,range line,400,C,line,,-17.47,3.51,-15.34,3.51,
-Coax,range line,500,C,line,,-17.42,4.64,-15.34,4.64,
-Coax,range line,600,C,line,,-17.47,6.01,-15.34,6.01,
-Coax,range line,700,C,line,,-17.47,7.47,-15.34,7.47,
-Coax,range line,800,C,line,,-17.47,9.21,-15.34,9.21,
-Coax,range line,900,C,line,,-17.47,11.21,-15.34,11.21,
-Coax,range line,1000,C,line,,-17.42,13.40,-15.34,13.40,
-Coax,range line,1100,C,line,,-17.47,15.96,-15.34,15.96,
-Coax,range line,1200,C,line,,-17.47,18.96,-15.34,18.96,
-Coax,range line,1300,C,line,,-17.42,22.25,-15.34,22.25,
-Coax,range line,1400,C,line,,-17.47,26.10,-15.34,26.10,
-Coax,range line,1500,C,line,,-17.47,30.68,-15.34,30.68,
-Coax,range line,1600,C,line,,-17.42,35.71,-15.34,35.71,
-Coax,range line,1700,C,line,,-17.47,41.58,-15.34,41.58,
-Coax,range line,1800,C,line,,-17.42,48.38,-15.34,48.38,
-FIN,aim point,800,C,line,,-1.07,1.57,-0.39,1.57,
-FIN,aim point,800,C,line,,0.45,1.57,1.12,1.57,
-FIN,aim point,1200,C,line,,-0.28,2.44,0.34,2.44,
-FIN,aim point,1600,C,line,,-1.07,3.23,-0.39,3.23,
-FIN,aim point,1600,C,line,,0.45,3.23,1.07,3.23,
-FIN,aim point,2000,C,line,,-0.34,4.10,0.39,4.10,
-FIN,aim point,2400,C,line,,-1.07,4.97,-0.39,4.97,
-FIN,aim point,2400,C,line,,0.45,4.97,1.07,4.97,
-FIN,line dot,600,C,dot,,0.03,1.29,,,
-FIN,line dot,1000,C,dot,,0.03,2.02,,,
-FIN,line dot,1400,C,dot,,0.03,2.87,,,
-FIN,line dot,1800,C,dot,,0.03,3.65,,,
-FIN,line dot,2200,C,dot,,0.03,4.49,,,
-HESH,aim point,600,C,line,,-0.22,7.19,0.96,7.19,
-HESH,aim point,600,C,line,,0.37,6.66,0.37,7.73,
-HESH,aim point,800,C,line,,-0.11,9.95,0.96,9.95,
-HESH,aim point,800,C,line,,0.42,9.38,0.42,10.51,
-HESH,aim point,1000,C,line,,0.00,12.75,1.07,12.75,
-HESH,aim point,1000,C,line,,0.53,12.19,0.53,13.32,
-HESH,aim point,1200,C,line,,0.20,15.90,1.32,15.90,
-HESH,aim point,1200,C,line,,0.76,15.34,0.76,16.46,
-HESH,aim point,1400,C,line,,0.31,19.22,1.43,19.22,
-HESH,aim point,1400,C,line,,0.87,18.65,0.87,19.78,
-HESH,aim point,1600,C,line,,0.51,22.87,1.57,22.87,
-HESH,aim point,1600,C,line,,1.04,22.28,1.04,23.46,
-HESH,aim point,1800,C,line,,0.65,26.69,1.77,26.69,
-HESH,aim point,1800,C,line,,1.21,26.10,1.21,27.28,
-HESH,aim point,2000,C,line,,0.81,30.90,2.05,30.90,
-HESH,aim point,2000,C,line,,1.43,30.26,1.43,31.55,
-HESH,aim point,2200,C,line,,0.87,35.40,2.33,35.40,
-HESH,aim point,2200,C,line,,1.60,34.70,1.60,36.10,
-HESH,aim point,2400,C,line,,1.04,40.06,2.61,40.06,
-HESH,aim point,2400,C,line,,1.83,39.25,1.83,40.88,
-HESH,aim point,2600,C,line,,1.15,45.34,2.95,45.34,
-HESH,aim point,2600,C,line,,2.05,44.47,2.05,46.21,
-HESH,aim point,2800,C,line,,1.26,50.91,3.29,50.91,
-HESH,aim point,2800,C,line,,2.28,49.92,2.28,51.89,
-HESH,aim point,3000,C,line,,1.49,56.75,3.62,56.75,
-HESH,aim point,3000,C,line,,2.56,55.65,2.56,57.84,
-HESH,aim point,3200,C,line,,1.63,63.27,4.05,63.27,
-HESH,aim point,3200,C,line,,2.84,62.06,2.84,64.48,
-HESH,aim point,500,C,circle,,0.28,5.96,,,0.50
-HESH,aim point,700,C,circle,,0.42,8.60,,,0.51
-HESH,aim point,900,C,circle,,0.53,11.38,,,0.50
-HESH,aim point,1100,C,circle,,0.67,14.36,,,0.48
-HESH,aim point,1300,C,circle,,0.81,17.67,,,0.50
-HESH,aim point,1500,C,circle,,0.98,21.15,,,0.50
-HESH,aim point,1500,C,dot,,0.98,21.15,,,
-HESH,aim point,1700,C,circle,,1.12,24.81,,,0.49
-HESH,aim point,1700,C,dot,,1.12,24.81,,,
-HESH,aim point,1900,C,circle,,1.32,28.82,,,0.51
-HESH,aim point,1900,C,dot,,1.32,28.82,,,
-HESH,aim point,2100,C,circle,,1.52,33.07,,,0.54
-HESH,aim point,2100,C,dot,,1.52,33.07,,,
-HESH,aim point,2300,C,circle,,1.71,37.67,,,0.56
-HESH,aim point,2300,C,dot,,1.71,37.67,,,
-HESH,aim point,2500,C,circle,,1.91,42.62,,,0.66
-HESH,aim point,2500,C,dot,,1.91,42.62,,,
-HESH,aim point,2700,C,circle,,2.16,48.04,,,0.74
-HESH,aim point,2700,C,dot,,2.16,48.04,,,
-HESH,aim point,2900,C,circle,,2.33,53.77,,,0.73
-HESH,aim point,2900,C,dot,,2.33,53.77,,,
-HESH,aim point,3100,C,circle,,2.70,59.92,,,0.77
-HESH,aim point,3100,C,dot,,2.70,59.92,,,
-HESH,line dot,,C,dot,,0.93,20.12,,,
-HESH,line dot,,C,dot,,0.98,22.03,,,
-HESH,line dot,,C,dot,,1.10,23.77,,,
-HESH,line dot,,C,dot,,1.15,25.73,,,
-HESH,line dot,,C,dot,,1.38,29.89,,,
-HESH,line dot,,C,dot,,1.43,32.03,,,
-HESH,line dot,,C,dot,,1.55,34.33,,,
-HESH,line dot,,C,dot,,1.66,36.58,,,
-HESH,line dot,,C,dot,,1.77,38.94,,,
-HESH,line dot,,C,dot,,1.88,41.41,,,
-HESH,line dot,,C,dot,,1.99,44.05,,,
-HESH,line dot,,C,dot,,2.11,46.58,,,
-HESH,line dot,,C,dot,,2.22,49.44,,,
-HESH,line dot,,C,dot,,2.39,52.42,,,
-HESH,line dot,,C,dot,,2.50,55.29,,,
-HESH,line dot,,C,dot,,2.61,58.43,,,
-HESH,line dot,,C,dot,,2.73,61.58,,,
-Unknown,cross,,C,line,,-0.48,67.93,0.53,67.93,
-Unknown,cross,,C,line,,0.03,67.31,0.03,68.55,
-Lead,FIN dash,800,L,line,,-9.33,1.60,-7.30,1.60,
-Lead,FIN dash,800,L,line,,-5.62,1.60,-3.60,1.60,
-Lead,FIN dash,800,R,line,,3.60,1.60,5.67,1.60,
-Lead,FIN dash,800,R,line,,7.30,1.60,9.38,1.60,
-Lead,FIN dash,1600,L,line,,-9.33,3.23,-7.25,3.23,
-Lead,FIN dash,1600,L,line,,-5.62,3.23,-3.54,3.23,
-Lead,FIN dash,1600,R,line,,3.60,3.26,5.62,3.26,
-Lead,FIN dash,1600,R,line,,7.36,3.26,9.38,3.26,
-Lead,FIN dot,1200,L,dot,,-9.24,2.42,,,
-Lead,FIN dot,1200,L,dot,,-7.39,2.42,,,
-Lead,FIN dot,1200,L,dot,,-5.53,2.42,,,
-Lead,FIN dot,1200,L,dot,,-3.74,2.42,,,
-Lead,FIN dot,1200,R,dot,,3.74,2.42,,,
-Lead,FIN dot,1200,R,dot,,5.59,2.42,,,
-Lead,FIN dot,1200,R,dot,,7.39,2.42,,,
-Lead,FIN dot,1200,R,dot,,9.24,2.42,,,
-Lead,FIN dot,2000,L,dot,,-9.24,4.10,,,
-Lead,FIN dot,2000,L,dot,,-7.39,4.10,,,
-Lead,FIN dot,2000,L,dot,,-5.53,4.10,,,
-Lead,FIN dot,2000,L,dot,,-3.74,4.10,,,
-Lead,FIN dot,2000,R,dot,,3.74,4.10,,,
-Lead,FIN dot,2000,R,dot,,5.59,4.10,,,
-Lead,FIN dot,2000,R,dot,,7.39,4.10,,,
-Lead,FIN dot,2000,R,dot,,9.24,4.10,,,
-Lead,dash,500,L,line,,-6.97,5.93,-5.84,5.93,
-Lead,dash,500,L,line,,-2.19,5.93,-1.07,5.93,
-Lead,dash,500,R,line,,1.69,5.93,2.81,5.93,
-Lead,dash,500,R,line,,6.46,5.93,7.59,5.93,
-Lead,dash,600,R,line,,6.52,7.16,8.15,7.16,
-Lead,dash,600,L,line,,-7.47,7.19,-5.84,7.19,
-Lead,tick ├,600,L,line,,-2.47,7.19,-1.80,7.19,
-Lead,tick ├,600,L,line,,-2.36,6.60,-2.36,7.78,
-Lead,tick ┤,600,R,line,,2.47,7.19,3.20,7.19,
-Lead,tick ┤,600,R,line,,3.09,6.60,3.09,7.78,
-Lead,dash,700,L,line,,-7.08,8.57,-5.96,8.57,
-Lead,dash,700,L,line,,-2.75,8.57,-1.63,8.57,
-Lead,dash,700,R,line,,2.47,8.57,3.54,8.57,
-Lead,dash,700,R,line,,6.74,8.57,7.87,8.57,
-Lead,dash,800,L,line,,-7.59,9.97,-5.96,9.97,
-Lead,tick ├,800,L,line,,-3.09,9.97,-2.47,9.97,
-Lead,tick ├,800,L,line,,-3.01,9.41,-3.01,10.54,
-Lead,tick ┤,800,R,line,,3.37,9.97,4.05,9.97,
-Lead,tick ┤,800,R,line,,3.93,9.41,3.93,10.54,
-Lead,dash,800,R,line,,6.85,9.97,8.48,9.97,
-Lead,dash,900,L,line,,-7.08,11.35,-5.96,11.35,
-Lead,dash,900,L,line,,-3.43,11.38,-2.25,11.38,
-Lead,dash,900,R,line,,3.37,11.38,4.49,11.38,
-Lead,dash,900,R,line,,7.02,11.38,8.15,11.38,
-Lead,dash,1000,L,line,,-7.59,12.78,-5.96,12.78,
-Lead,tick ├,1000,L,line,,-3.76,12.78,-3.03,12.78,
-Lead,tick ├,1000,L,line,,-3.65,12.22,-3.65,13.34,
-Lead,tick ├,1000,L,line,,-2.14,12.78,-1.46,12.78,
-Lead,tick ├,1000,L,line,,-2.02,12.22,-2.02,13.34,
-Lead,tick ┤,1000,R,line,,2.64,12.78,3.32,12.78,
-Lead,tick ┤,1000,R,line,,3.20,12.22,3.20,13.34,
-Lead,tick ┤,1000,R,line,,4.27,12.78,4.94,12.78,
-Lead,tick ┤,1000,R,line,,4.86,12.22,4.86,13.34,
-Lead,dash,1000,R,line,,7.14,12.78,8.77,12.78,
-Lead,dash,1100,L,line,,-7.14,14.38,-5.96,14.38,
-Lead,dash,1100,L,line,,-4.10,14.38,-2.92,14.38,
-Lead,dash,1100,L,line,,-2.30,14.38,-1.12,14.38,
-Lead,dash,1100,R,line,,7.30,14.38,8.48,14.38,
-Lead,dash,1100,R,line,,2.42,14.41,3.60,14.41,
-Lead,dash,1100,R,line,,4.27,14.41,5.45,14.41,
-Lead,dash,1200,L,line,,-7.59,15.93,-6.01,15.93,
-Lead,tick ├,1200,L,line,,-4.49,15.93,-3.82,15.93,
-Lead,tick ├,1200,L,line,,-4.38,15.37,-4.38,16.49,
-Lead,tick ├,1200,L,line,,-2.42,15.93,-1.74,15.93,
-Lead,tick ├,1200,L,line,,-2.30,15.37,-2.30,16.55,
-Lead,tick ┤,1200,R,line,,3.20,15.93,3.88,15.93,
-Lead,tick ┤,1200,R,line,,3.79,15.31,3.79,16.55,
-Lead,tick ┤,1200,R,line,,5.34,15.93,5.96,15.93,
-Lead,tick ┤,1200,R,line,,5.87,15.37,5.87,16.55,
-Lead,dash,1200,R,line,,7.47,15.93,9.10,15.93,
-Lead,dash,1300,L,line,,-4.89,17.64,-3.76,17.64,
-Lead,dash,1300,L,line,,-2.58,17.64,-1.40,17.64,
-Lead,dash,1300,R,line,,3.03,17.64,4.21,17.64,
-Lead,dash,1300,R,line,,5.39,17.64,6.57,17.64,
-Lead,dash,1300,R,line,,7.64,17.64,8.82,17.64,
-Lead,dash,1300,L,line,,-7.19,17.67,-6.01,17.67,
-Lead,dash,1400,L,line,,-7.64,19.27,-6.01,19.27,
-Lead,tick ├,1400,L,line,,-5.28,19.27,-4.61,19.27,
-Lead,tick ├,1400,L,line,,-5.17,18.68,-5.17,19.81,
-Lead,tick ├,1400,L,line,,-2.75,19.27,-2.08,19.27,
-Lead,tick ├,1400,L,line,,-2.64,18.68,-2.64,19.81,
-Lead,tick ┤,1400,R,line,,3.82,19.27,4.49,19.27,
-Lead,tick ┤,1400,R,line,,4.38,18.68,4.38,19.81,
-Lead,tick ┤,1400,R,line,,6.35,19.27,7.08,19.27,
-Lead,tick ┤,1400,R,line,,6.97,18.68,6.97,19.86,
-Lead,dash,1400,R,line,,7.75,19.27,9.44,19.27,
-Lead,dash,1500,L,line,,-7.19,21.13,-6.07,21.13,
-Lead,dash,1500,R,line,,3.71,21.13,4.89,21.13,
-Lead,dash,1500,L,line,,-5.79,21.15,-4.61,21.15,
-Lead,dash,1500,L,line,,-2.92,21.15,-1.80,21.15,
-Lead,dash,1500,R,line,,6.52,21.15,7.70,21.15,
-Lead,dash,1500,R,line,,7.98,21.15,9.16,21.15,
-Lead,plus,1600,L,line,,-7.70,22.90,-5.56,22.90,
-Lead,plus,1600,L,line,,-6.10,22.28,-6.10,23.46,
-Lead,tick ├,1600,L,line,,-3.15,22.90,-2.47,22.90,
-Lead,tick ├,1600,L,line,,-3.01,22.33,-3.01,23.46,
-Lead,tick ┤,1600,R,line,,4.55,22.90,5.17,22.90,
-Lead,tick ┤,1600,R,line,,5.08,22.33,5.08,23.46,
-Lead,plus,1600,R,line,,7.64,22.90,9.78,22.90,
-Lead,plus,1600,R,line,,8.23,22.28,8.23,23.46,
-Lead,dash,1700,L,line,,-7.25,24.83,-5.51,24.83,
-Lead,dash,1700,L,line,,-3.32,24.83,-2.14,24.83,
-Lead,dash,1700,R,line,,4.44,24.83,5.56,24.83,
-Lead,dash,1700,R,line,,7.81,24.83,9.55,24.83,
-Lead,plus,1800,L,line,,-7.70,26.77,-6.12,26.77,
-Lead,plus,1800,L,line,,-7.08,26.16,-7.08,27.28,
-Lead,tick ├,1800,L,line,,-3.54,26.77,-2.87,26.77,
-Lead,tick ├,1800,L,line,,-3.43,26.16,-3.43,27.28,
-Lead,tick ┤,1800,R,line,,5.28,26.77,5.96,26.77,
-Lead,tick ┤,1800,R,line,,5.87,26.16,5.87,27.34,
-Lead,plus,1800,R,line,,8.54,26.77,10.17,26.77,
-Lead,plus,1800,R,line,,9.52,26.16,9.52,27.34,
-Lead,dash,1900,R,line,,9.21,28.80,10.39,28.80,
-Lead,dash,1900,L,line,,-7.75,28.82,-6.63,28.82,
-Lead,dash,1900,L,line,,-3.71,28.82,-2.64,28.82,
-Lead,dash,1900,R,line,,5.17,28.85,6.35,28.85,
-Lead,tick ├,2000,L,line,,-3.99,30.93,-3.26,30.93,
-Lead,tick ├,2000,L,line,,-3.88,30.37,-3.88,31.55,
-Lead,tick ├,2000,L,line,,-8.32,30.96,-7.59,30.96,
-Lead,tick ├,2000,L,line,,-8.20,30.26,-8.20,31.61,
-Lead,tick ┤,2000,R,line,,6.07,30.96,6.80,30.96,
-Lead,tick ┤,2000,R,line,,6.71,30.31,6.71,31.61,
-Lead,tick ┤,2000,R,line,,10.45,30.96,11.13,30.96,
-Lead,tick ┤,2000,R,line,,11.01,30.31,11.01,31.55,
-Lead,dash,2100,L,line,,-8.82,33.07,-7.75,33.07,
-Lead,dash,2100,L,line,,-4.16,33.07,-3.03,33.07,
-Lead,dash,2100,R,line,,6.07,33.07,7.14,33.07,
-Lead,dash,2100,R,line,,10.73,33.07,11.86,33.07,
-Lead,tick ├,2200,L,line,,-9.50,35.34,-8.82,35.34,
-Lead,tick ├,2200,L,line,,-9.41,34.64,-9.41,36.04,
-Lead,tick ├,2200,L,line,,-4.49,35.34,-3.76,35.34,
-Lead,tick ├,2200,L,line,,-4.38,34.64,-4.38,36.04,
-Lead,tick ┤,2200,R,line,,7.02,35.34,7.64,35.34,
-Lead,tick ┤,2200,R,line,,7.56,34.53,7.56,36.04,
-Lead,tick ┤,2200,R,line,,12.02,35.34,12.70,35.34,
-Lead,tick ┤,2200,R,line,,12.59,34.64,12.59,35.99,
-Lead,dash,2300,L,line,,-10.17,37.65,-8.93,37.65,
-Lead,dash,2300,L,line,,-4.72,37.65,-3.60,37.65,
-Lead,dash,2300,R,line,,7.02,37.65,8.15,37.65,
-Lead,dash,2300,R,line,,12.36,37.65,13.54,37.65,
-Lead,tick ┤,2400,R,line,,8.03,40.12,8.65,40.12,
-Lead,tick ┤,2400,R,line,,8.57,39.30,8.57,40.93,
-Lead,tick ├,2400,L,line,,-10.79,40.15,-10.17,40.15,
-Lead,tick ├,2400,L,line,,-10.68,39.30,-10.68,40.93,
-Lead,tick ├,2400,L,line,,-5.06,40.15,-4.33,40.15,
-Lead,tick ├,2400,L,line,,-4.92,39.30,-4.92,40.93,
-Lead,tick ┤,2400,R,line,,13.54,40.15,14.16,40.15,
-Lead,tick ┤,2400,R,line,,14.10,39.30,14.10,40.93,
-Lead,dash,2500,R,line,,14.27,42.62,15.34,42.62,
-Lead,dash,2500,L,line,,-11.46,42.65,-10.39,42.65,
-Lead,dash,2500,L,line,,-5.28,42.65,-4.21,42.65,
-Lead,dash,2500,R,line,,7.98,42.67,9.21,42.67,
-Lead,tick ├,2600,L,line,,-12.25,45.34,-11.69,45.34,
-Lead,tick ├,2600,L,line,,-12.16,44.47,-12.16,46.21,
-Lead,tick ├,2600,L,line,,-5.62,45.34,-5.00,45.34,
-Lead,tick ├,2600,L,line,,-5.53,44.42,-5.53,46.27,
-Lead,tick ┤,2600,R,line,,9.10,45.34,9.72,45.34,
-Lead,tick ┤,2600,R,line,,9.64,44.47,9.64,46.27,
-Lead,tick ┤,2600,R,line,,15.79,45.34,16.35,45.34,
-Lead,tick ┤,2600,R,line,,16.27,44.42,16.27,46.21,
-Lead,dash,2700,L,line,,-12.98,48.01,-11.91,48.01,
-Lead,dash,2700,L,line,,-5.90,48.04,-4.83,48.04,
-Lead,dash,2700,R,line,,9.21,48.04,10.28,48.04,
-Lead,dash,2700,R,line,,16.24,48.04,17.31,48.04,
-Lead,tick ├,2800,L,line,,-13.88,50.88,-13.20,50.88,
-Lead,tick ├,2800,L,line,,-13.79,49.92,-13.79,51.83,
-Lead,tick ┤,2800,R,line,,10.28,50.88,10.90,50.88,
-Lead,tick ┤,2800,R,line,,10.84,49.92,10.84,51.83,
-Lead,tick ├,2800,L,line,,-6.29,50.91,-5.67,50.91,
-Lead,tick ├,2800,L,line,,-6.21,49.92,-6.21,51.83,
-Lead,tick ┤,2800,R,line,,17.81,50.91,18.49,50.91,
-Lead,tick ┤,2800,R,line,,18.37,49.87,18.37,51.89,
-Lead,dash,2900,L,line,,-14.72,53.83,-13.48,53.83,
-Lead,dash,2900,L,line,,-6.74,53.83,-5.51,53.83,
-Lead,dash,2900,R,line,,10.39,53.83,11.52,53.83,
-Lead,dash,2900,R,line,,18.43,53.83,19.61,53.83,
-Lead,tick ┤,3000,R,line,,20.06,56.78,20.73,56.78,
-Lead,tick ┤,3000,R,line,,20.65,55.65,20.65,57.90,
-Lead,tick ├,3000,L,line,,-15.56,56.81,-14.89,56.81,
-Lead,tick ├,3000,L,line,,-15.51,55.71,-15.51,57.84,
-Lead,tick ├,3000,L,line,,-7.02,56.81,-6.46,56.81,
-Lead,tick ├,3000,L,line,,-6.94,55.65,-6.94,57.90,
-Lead,tick ┤,3000,R,line,,11.52,56.81,12.14,56.81,
-Lead,tick ┤,3000,R,line,,12.08,55.71,12.08,57.84,
-Lead,dash,3100,L,line,,-16.46,59.92,-15.34,59.92,
-Lead,dash,3100,L,line,,-7.42,59.92,-6.24,59.92,
-Lead,dash,3100,R,line,,11.74,59.92,12.81,59.92,
-Lead,dash,3100,R,line,,20.79,59.95,21.91,59.95,
-Lead,tick ├,3200,L,line,,-17.47,63.24,-16.86,63.24,
-Lead,tick ├,3200,L,line,,-17.42,62.06,-17.42,64.53,
-Lead,tick ├,3200,L,line,,-7.87,63.24,-7.25,63.24,
-Lead,tick ├,3200,L,line,,-7.78,62.06,-7.78,64.42,
-Lead,tick ┤,3200,R,line,,12.98,63.24,13.54,63.24,
-Lead,tick ┤,3200,R,line,,13.48,62.06,13.48,64.42,
-Lead,tick ┤,3200,R,line,,22.53,63.24,23.15,63.24,
-Lead,tick ┤,3200,R,line,,23.09,62.00,23.09,64.42,
-Coax,label,,C,textbox,COAX,-17.92,-1.49,-14.89,-0.48,
-Coax,label,200,L,textbox,2,-19.89,1.04,-19.27,1.99,
-Coax,label,400,L,textbox,4,-19.89,3.01,-19.27,3.96,
-Coax,label,600,L,textbox,6,-19.95,5.42,-19.22,6.49,
-Coax,label,800,L,textbox,8,-19.95,8.68,-19.27,9.69,
-Coax,label,900,L,textbox,9,-19.95,10.65,-19.27,11.66,
-Coax,label,1000,L,textbox,10,-20.56,12.90,-19.33,13.91,
-Coax,label,1100,L,textbox,11,-20.56,15.48,-19.50,16.49,
-Coax,label,1200,L,textbox,12,-20.56,18.40,-19.33,19.41,
-Coax,label,1300,L,textbox,13,-20.56,21.72,-19.33,22.73,
-Coax,label,1400,L,textbox,14,-20.56,25.59,-19.33,26.60,
-Coax,label,1500,L,textbox,15,-20.56,30.09,-19.33,31.16,
-Coax,label,1600,L,textbox,16,-20.56,35.20,-19.33,36.21,
-Coax,label,1700,L,textbox,17,-20.56,41.10,-19.33,42.11,
-Coax,label,1800,L,textbox,18,-20.56,47.90,-19.33,48.85,
-Stadia,label,800,C,textbox,8,5.79,-3.51,6.29,-2.84,
-Stadia,label,1200,C,textbox,12,8.48,-2.73,9.44,-1.99,
-Stadia,label,1600,C,textbox,16,11.35,-2.33,12.31,-1.60,
-Stadia,label,2000,C,textbox,20,14.27,-2.11,15.11,-1.38,
-FIN,label,800,C,textbox,8,-1.91,1.21,-1.40,1.94,
-FIN,label,1200,C,textbox,12,0.62,2.05,1.57,2.84,
-FIN,label,1600,C,textbox,16,-2.30,2.84,-1.35,3.57,
-FIN,label,2000,C,textbox,20,0.62,3.68,1.57,4.41,
-FIN,label,2400,C,textbox,24,-2.30,4.58,-1.35,5.37,
-HESH,label,400,L,textbox,4,-9.55,4.19,-8.99,5.14,
-HESH,label,400,R,textbox,4,9.38,4.19,10.00,5.14,
-HESH,label,600,L,textbox,6,-9.66,6.66,-9.10,7.67,
-HESH,label,600,R,textbox,6,9.72,6.66,10.34,7.67,
-HESH,label,800,L,textbox,8,-9.95,9.47,-9.27,10.48,
-HESH,label,800,R,textbox,8,10.17,9.47,10.79,10.48,
-HESH,label,1000,L,textbox,10,-10.84,12.11,-9.38,13.34,
-HESH,label,1000,R,textbox,10,10.56,12.11,12.02,13.29,
-HESH,label,1200,L,textbox,12,-10.79,15.42,-9.55,16.38,
-HESH,label,1200,R,textbox,12,10.96,15.42,12.25,16.38,
-HESH,label,1400,L,textbox,14,-10.96,18.74,-9.66,19.75,
-HESH,label,1400,R,textbox,14,11.41,18.74,12.64,19.75,
-HESH,label,1600,L,textbox,16,-11.13,22.39,-9.83,23.35,
-HESH,label,1600,R,textbox,16,11.91,22.33,13.15,23.35,
-HESH,label,1800,L,textbox,18,-11.24,26.27,-9.89,27.22,
-HESH,label,1800,R,textbox,18,12.36,26.27,13.65,27.22,
-HESH,label,2000,L,textbox,20,-11.63,30.31,-10.06,31.44,
-HESH,label,2000,R,textbox,20,12.75,30.31,14.33,31.44,
-HESH,label,2200,L,textbox,22,-11.46,34.81,-10.17,35.88,
-HESH,label,2200,R,textbox,22,13.37,34.81,14.66,35.82,
-HESH,label,2400,L,textbox,24,-11.57,39.64,-10.34,40.60,
-HESH,label,2400,R,textbox,24,13.93,39.64,15.11,40.60,
-HESH,label,2600,L,textbox,26,-11.63,44.81,-10.39,45.82,
-HESH,label,2600,R,textbox,26,14.50,44.81,15.73,45.82,
-HESH,label,2800,L,textbox,28,-11.74,50.37,-10.51,51.33,
-HESH,label,2800,R,textbox,28,15.11,50.37,16.35,51.33,
-HESH,label,3000,L,textbox,30,-12.14,56.10,-10.62,57.28,
-HESH,label,3000,R,textbox,30,15.68,56.10,17.19,57.28,
-HESH,label,3200,L,textbox,32,-11.97,62.79,-10.73,63.74,
-HESH,label,3200,R,textbox,32,16.35,62.79,17.59,63.74,</script>
+Stadia,base line,,C,line,,4.52,-0.04,18.43,-0.04,
+Stadia,range dash,600,C,line,,4.65,-3.86,6.25,-3.86,
+Stadia,range dash,800,C,line,,6.38,-2.87,7.98,-2.87,
+Stadia,range dash,1000,C,line,,8.05,-2.30,9.71,-2.30,
+Stadia,range dash,1200,C,line,,9.78,-1.89,11.38,-1.89,
+Stadia,range dash,1400,C,line,,11.51,-1.63,13.18,-1.63,
+Stadia,range dash,1600,C,line,,13.24,-1.43,14.84,-1.43,
+Stadia,range dash,1800,C,line,,14.91,-1.27,16.56,-1.27,
+Stadia,range dash,2000,C,line,,16.64,-1.16,18.29,-1.16,
+Coax,range line,200,C,line,,-20.63,1.84,-18.16,1.84,
+Coax,range line,300,C,line,,-20.68,2.92,-18.16,2.92,
+Coax,range line,400,C,line,,-20.68,4.16,-18.16,4.16,
+Coax,range line,500,C,line,,-20.63,5.49,-18.16,5.49,
+Coax,range line,600,C,line,,-20.68,7.12,-18.16,7.12,
+Coax,range line,700,C,line,,-20.68,8.84,-18.16,8.84,
+Coax,range line,800,C,line,,-20.68,10.90,-18.16,10.90,
+Coax,range line,900,C,line,,-20.68,13.27,-18.16,13.27,
+Coax,range line,1000,C,line,,-20.63,15.87,-18.16,15.87,
+Coax,range line,1100,C,line,,-20.68,18.90,-18.16,18.90,
+Coax,range line,1200,C,line,,-20.68,22.45,-18.16,22.45,
+Coax,range line,1300,C,line,,-20.63,26.34,-18.16,26.34,
+Coax,range line,1400,C,line,,-20.68,30.90,-18.16,30.90,
+Coax,range line,1500,C,line,,-20.68,36.32,-18.16,36.32,
+Coax,range line,1600,C,line,,-20.63,42.28,-18.16,42.28,
+Coax,range line,1700,C,line,,-20.68,49.23,-18.16,49.23,
+Coax,range line,1800,C,line,,-20.63,57.28,-18.16,57.28,
+FIN,aim point,800,C,line,,-1.27,1.90,-0.46,1.90,
+FIN,aim point,800,C,line,,0.53,1.90,1.33,1.90,
+FIN,aim point,1200,C,line,,-0.33,2.89,0.40,2.89,
+FIN,aim point,1600,C,line,,-1.27,3.86,-0.46,3.86,
+FIN,aim point,1600,C,line,,0.53,3.86,1.27,3.86,
+FIN,aim point,2000,C,line,,-0.40,4.86,0.46,4.86,
+FIN,aim point,2400,C,line,,-1.27,5.89,-0.46,5.89,
+FIN,aim point,2400,C,line,,0.53,5.89,1.27,5.89,
+FIN,line dot,600,C,dot,,0.04,1.53,,,
+FIN,line dot,1000,C,dot,,0.04,2.39,,,
+FIN,line dot,1400,C,dot,,0.04,3.40,,,
+FIN,line dot,1800,C,dot,,0.04,4.32,,,
+FIN,line dot,2200,C,dot,,0.04,5.32,,,
+HESH,aim point,600,C,line,,-0.26,8.52,1.14,8.52,
+HESH,aim point,600,C,line,,0.44,7.89,0.44,9.15,
+HESH,aim point,800,C,line,,-0.13,11.78,1.14,11.78,
+HESH,aim point,800,C,line,,0.50,11.12,0.50,12.45,
+HESH,aim point,1000,C,line,,0.00,15.10,1.27,15.10,
+HESH,aim point,1000,C,line,,0.63,14.43,0.63,15.77,
+HESH,aim point,1200,C,line,,0.24,18.83,1.56,18.83,
+HESH,aim point,1200,C,line,,0.90,18.16,0.90,19.49,
+HESH,aim point,1400,C,line,,0.37,22.75,1.69,22.75,
+HESH,aim point,1400,C,line,,1.03,22.08,1.03,23.42,
+HESH,aim point,1600,C,line,,0.60,27.08,1.86,27.08,
+HESH,aim point,1600,C,line,,1.23,26.38,1.23,27.78,
+HESH,aim point,1800,C,line,,0.77,31.60,2.10,31.60,
+HESH,aim point,1800,C,line,,1.43,30.90,1.43,32.30,
+HESH,aim point,2000,C,line,,0.96,36.59,2.43,36.59,
+HESH,aim point,2000,C,line,,1.69,35.83,1.69,37.35,
+HESH,aim point,2200,C,line,,1.03,41.91,2.76,41.91,
+HESH,aim point,2200,C,line,,1.89,41.08,1.89,42.74,
+HESH,aim point,2400,C,line,,1.23,47.43,3.09,47.43,
+HESH,aim point,2400,C,line,,2.17,46.46,2.17,48.39,
+HESH,aim point,2600,C,line,,1.36,53.69,3.49,53.69,
+HESH,aim point,2600,C,line,,2.43,52.66,2.43,54.72,
+HESH,aim point,2800,C,line,,1.49,60.27,3.90,60.27,
+HESH,aim point,2800,C,line,,2.70,59.10,2.70,61.44,
+HESH,aim point,3000,C,line,,1.76,67.19,4.29,67.19,
+HESH,aim point,3000,C,line,,3.03,65.89,3.03,68.48,
+HESH,aim point,3200,C,line,,1.93,74.91,4.80,74.91,
+HESH,aim point,3200,C,line,,3.36,73.48,3.36,76.34,
+HESH,aim point,500,C,circle,,0.33,7.06,,,0.59
+HESH,aim point,700,C,circle,,0.50,10.18,,,0.60
+HESH,aim point,900,C,circle,,0.63,13.47,,,0.59
+HESH,aim point,1100,C,circle,,0.79,17.00,,,0.57
+HESH,aim point,1300,C,circle,,0.96,20.92,,,0.59
+HESH,aim point,1500,C,circle,,1.16,25.04,,,0.59
+HESH,aim point,1500,C,dot,,1.16,25.04,,,
+HESH,aim point,1700,C,circle,,1.33,29.37,,,0.58
+HESH,aim point,1700,C,dot,,1.33,29.37,,,
+HESH,aim point,1900,C,circle,,1.56,34.12,,,0.60
+HESH,aim point,1900,C,dot,,1.56,34.12,,,
+HESH,aim point,2100,C,circle,,1.80,39.15,,,0.64
+HESH,aim point,2100,C,dot,,1.80,39.15,,,
+HESH,aim point,2300,C,circle,,2.02,44.60,,,0.66
+HESH,aim point,2300,C,dot,,2.02,44.60,,,
+HESH,aim point,2500,C,circle,,2.26,50.46,,,0.78
+HESH,aim point,2500,C,dot,,2.26,50.46,,,
+HESH,aim point,2700,C,circle,,2.56,56.88,,,0.88
+HESH,aim point,2700,C,dot,,2.56,56.88,,,
+HESH,aim point,2900,C,circle,,2.76,63.66,,,0.86
+HESH,aim point,2900,C,dot,,2.76,63.66,,,
+HESH,aim point,3100,C,circle,,3.20,70.94,,,0.91
+HESH,aim point,3100,C,dot,,3.20,70.94,,,
+HESH,line dot,,C,dot,,1.10,23.82,,,
+HESH,line dot,,C,dot,,1.16,26.08,,,
+HESH,line dot,,C,dot,,1.30,28.14,,,
+HESH,line dot,,C,dot,,1.36,30.46,,,
+HESH,line dot,,C,dot,,1.63,35.39,,,
+HESH,line dot,,C,dot,,1.69,37.92,,,
+HESH,line dot,,C,dot,,1.84,40.65,,,
+HESH,line dot,,C,dot,,1.97,43.31,,,
+HESH,line dot,,C,dot,,2.10,46.10,,,
+HESH,line dot,,C,dot,,2.23,49.03,,,
+HESH,line dot,,C,dot,,2.36,52.15,,,
+HESH,line dot,,C,dot,,2.50,55.15,,,
+HESH,line dot,,C,dot,,2.63,58.54,,,
+HESH,line dot,,C,dot,,2.83,62.06,,,
+HESH,line dot,,C,dot,,2.96,65.46,,,
+HESH,line dot,,C,dot,,3.09,69.18,,,
+HESH,line dot,,C,dot,,3.23,72.91,,,
+Unknown,cross,,C,line,,-0.57,80.43,0.63,80.43,
+Unknown,cross,,C,line,,0.04,79.69,0.04,81.16,
+Lead,FIN dash,800,L,line,,-11.05,1.89,-8.64,1.89,
+Lead,FIN dash,800,L,line,,-6.65,1.89,-4.26,1.89,
+Lead,FIN dash,800,R,line,,4.26,1.89,6.71,1.89,
+Lead,FIN dash,800,R,line,,8.64,1.89,11.11,1.89,
+Lead,FIN dash,1600,L,line,,-11.05,3.82,-8.58,3.82,
+Lead,FIN dash,1600,L,line,,-6.65,3.82,-4.19,3.82,
+Lead,FIN dash,1600,R,line,,4.26,3.86,6.65,3.86,
+Lead,FIN dash,1600,R,line,,8.71,3.86,11.11,3.86,
+Lead,FIN dot,1200,L,dot,,-10.94,2.87,,,
+Lead,FIN dot,1200,L,dot,,-8.75,2.87,,,
+Lead,FIN dot,1200,L,dot,,-6.55,2.87,,,
+Lead,FIN dot,1200,L,dot,,-4.43,2.87,,,
+Lead,FIN dot,1200,R,dot,,4.43,2.87,,,
+Lead,FIN dot,1200,R,dot,,6.62,2.87,,,
+Lead,FIN dot,1200,R,dot,,8.75,2.87,,,
+Lead,FIN dot,1200,R,dot,,10.94,2.87,,,
+Lead,FIN dot,2000,L,dot,,-10.94,4.85,,,
+Lead,FIN dot,2000,L,dot,,-8.75,4.85,,,
+Lead,FIN dot,2000,L,dot,,-6.55,4.85,,,
+Lead,FIN dot,2000,L,dot,,-4.43,4.85,,,
+Lead,FIN dot,2000,R,dot,,4.43,4.85,,,
+Lead,FIN dot,2000,R,dot,,6.62,4.85,,,
+Lead,FIN dot,2000,R,dot,,8.75,4.85,,,
+Lead,FIN dot,2000,R,dot,,10.94,4.85,,,
+Lead,dash,500,L,line,,-8.25,7.02,-6.91,7.02,
+Lead,dash,500,L,line,,-2.59,7.02,-1.27,7.02,
+Lead,dash,500,R,line,,2.00,7.02,3.33,7.02,
+Lead,dash,500,R,line,,7.65,7.02,8.99,7.02,
+Lead,dash,600,R,line,,7.72,8.48,9.65,8.48,
+Lead,dash,600,L,line,,-8.84,8.51,-6.91,8.51,
+Lead,tick ├,600,L,line,,-2.92,8.51,-2.13,8.51,
+Lead,tick ├,600,L,line,,-2.79,7.81,-2.79,9.21,
+Lead,tick ┤,600,R,line,,2.92,8.51,3.79,8.51,
+Lead,tick ┤,600,R,line,,3.66,7.81,3.66,9.21,
+Lead,dash,700,L,line,,-8.38,10.15,-7.06,10.15,
+Lead,dash,700,L,line,,-3.26,10.15,-1.93,10.15,
+Lead,dash,700,R,line,,2.92,10.15,4.19,10.15,
+Lead,dash,700,R,line,,7.98,10.15,9.32,10.15,
+Lead,dash,800,L,line,,-8.99,11.80,-7.06,11.80,
+Lead,tick ├,800,L,line,,-3.66,11.80,-2.92,11.80,
+Lead,tick ├,800,L,line,,-3.56,11.14,-3.56,12.48,
+Lead,tick ┤,800,R,line,,3.99,11.80,4.80,11.80,
+Lead,tick ┤,800,R,line,,4.65,11.14,4.65,12.48,
+Lead,dash,800,R,line,,8.11,11.80,10.04,11.80,
+Lead,dash,900,L,line,,-8.38,13.44,-7.06,13.44,
+Lead,dash,900,L,line,,-4.06,13.47,-2.66,13.47,
+Lead,dash,900,R,line,,3.99,13.47,5.32,13.47,
+Lead,dash,900,R,line,,8.31,13.47,9.65,13.47,
+Lead,dash,1000,L,line,,-8.99,15.13,-7.06,15.13,
+Lead,tick ├,1000,L,line,,-4.45,15.13,-3.59,15.13,
+Lead,tick ├,1000,L,line,,-4.32,14.47,-4.32,15.79,
+Lead,tick ├,1000,L,line,,-2.53,15.13,-1.73,15.13,
+Lead,tick ├,1000,L,line,,-2.39,14.47,-2.39,15.79,
+Lead,tick ┤,1000,R,line,,3.13,15.13,3.93,15.13,
+Lead,tick ┤,1000,R,line,,3.79,14.47,3.79,15.79,
+Lead,tick ┤,1000,R,line,,5.06,15.13,5.85,15.13,
+Lead,tick ┤,1000,R,line,,5.75,14.47,5.75,15.79,
+Lead,dash,1000,R,line,,8.45,15.13,10.38,15.13,
+Lead,dash,1100,L,line,,-8.45,17.03,-7.06,17.03,
+Lead,dash,1100,L,line,,-4.85,17.03,-3.46,17.03,
+Lead,dash,1100,L,line,,-2.72,17.03,-1.33,17.03,
+Lead,dash,1100,R,line,,8.64,17.03,10.04,17.03,
+Lead,dash,1100,R,line,,2.87,17.06,4.26,17.06,
+Lead,dash,1100,R,line,,5.06,17.06,6.45,17.06,
+Lead,dash,1200,L,line,,-8.99,18.86,-7.12,18.86,
+Lead,tick ├,1200,L,line,,-5.32,18.86,-4.52,18.86,
+Lead,tick ├,1200,L,line,,-5.19,18.20,-5.19,19.52,
+Lead,tick ├,1200,L,line,,-2.87,18.86,-2.06,18.86,
+Lead,tick ├,1200,L,line,,-2.72,18.20,-2.72,19.60,
+Lead,tick ┤,1200,R,line,,3.79,18.86,4.59,18.86,
+Lead,tick ┤,1200,R,line,,4.49,18.13,4.49,19.60,
+Lead,tick ┤,1200,R,line,,6.32,18.86,7.06,18.86,
+Lead,tick ┤,1200,R,line,,6.95,18.20,6.95,19.60,
+Lead,dash,1200,R,line,,8.84,18.86,10.77,18.86,
+Lead,dash,1300,L,line,,-5.79,20.89,-4.45,20.89,
+Lead,dash,1300,L,line,,-3.05,20.89,-1.66,20.89,
+Lead,dash,1300,R,line,,3.59,20.89,4.98,20.89,
+Lead,dash,1300,R,line,,6.38,20.89,7.78,20.89,
+Lead,dash,1300,R,line,,9.05,20.89,10.44,20.89,
+Lead,dash,1300,L,line,,-8.51,20.92,-7.12,20.92,
+Lead,dash,1400,L,line,,-9.05,22.82,-7.12,22.82,
+Lead,tick ├,1400,L,line,,-6.25,22.82,-5.46,22.82,
+Lead,tick ├,1400,L,line,,-6.12,22.12,-6.12,23.45,
+Lead,tick ├,1400,L,line,,-3.26,22.82,-2.46,22.82,
+Lead,tick ├,1400,L,line,,-3.13,22.12,-3.13,23.45,
+Lead,tick ┤,1400,R,line,,4.52,22.82,5.32,22.82,
+Lead,tick ┤,1400,R,line,,5.19,22.12,5.19,23.45,
+Lead,tick ┤,1400,R,line,,7.52,22.82,8.38,22.82,
+Lead,tick ┤,1400,R,line,,8.25,22.12,8.25,23.51,
+Lead,dash,1400,R,line,,9.18,22.82,11.18,22.82,
+Lead,dash,1500,L,line,,-8.51,25.02,-7.19,25.02,
+Lead,dash,1500,R,line,,4.39,25.02,5.79,25.02,
+Lead,dash,1500,L,line,,-6.86,25.04,-5.46,25.04,
+Lead,dash,1500,L,line,,-3.46,25.04,-2.13,25.04,
+Lead,dash,1500,R,line,,7.72,25.04,9.12,25.04,
+Lead,dash,1500,R,line,,9.45,25.04,10.85,25.04,
+Lead,plus,1600,L,line,,-9.12,27.11,-6.58,27.11,
+Lead,plus,1600,L,line,,-7.22,26.38,-7.22,27.78,
+Lead,tick ├,1600,L,line,,-3.73,27.11,-2.92,27.11,
+Lead,tick ├,1600,L,line,,-3.56,26.44,-3.56,27.78,
+Lead,tick ┤,1600,R,line,,5.39,27.11,6.12,27.11,
+Lead,tick ┤,1600,R,line,,6.01,26.44,6.01,27.78,
+Lead,plus,1600,R,line,,9.05,27.11,11.58,27.11,
+Lead,plus,1600,R,line,,9.74,26.38,9.74,27.78,
+Lead,dash,1700,L,line,,-8.58,29.40,-6.52,29.40,
+Lead,dash,1700,L,line,,-3.93,29.40,-2.53,29.40,
+Lead,dash,1700,R,line,,5.26,29.40,6.58,29.40,
+Lead,dash,1700,R,line,,9.25,29.40,11.31,29.40,
+Lead,plus,1800,L,line,,-9.12,31.70,-7.25,31.70,
+Lead,plus,1800,L,line,,-8.38,30.97,-8.38,32.30,
+Lead,tick ├,1800,L,line,,-4.19,31.70,-3.40,31.70,
+Lead,tick ├,1800,L,line,,-4.06,30.97,-4.06,32.30,
+Lead,tick ┤,1800,R,line,,6.25,31.70,7.06,31.70,
+Lead,tick ┤,1800,R,line,,6.95,30.97,6.95,32.37,
+Lead,plus,1800,R,line,,10.11,31.70,12.04,31.70,
+Lead,plus,1800,R,line,,11.27,30.97,11.27,32.37,
+Lead,dash,1900,R,line,,10.90,34.10,12.30,34.10,
+Lead,dash,1900,L,line,,-9.18,34.12,-7.85,34.12,
+Lead,dash,1900,L,line,,-4.39,34.12,-3.13,34.12,
+Lead,dash,1900,R,line,,6.12,34.16,7.52,34.16,
+Lead,tick ├,2000,L,line,,-4.72,36.62,-3.86,36.62,
+Lead,tick ├,2000,L,line,,-4.59,35.96,-4.59,37.35,
+Lead,tick ├,2000,L,line,,-9.85,36.66,-8.99,36.66,
+Lead,tick ├,2000,L,line,,-9.71,35.83,-9.71,37.43,
+Lead,tick ┤,2000,R,line,,7.19,36.66,8.05,36.66,
+Lead,tick ┤,2000,R,line,,7.94,35.89,7.94,37.43,
+Lead,tick ┤,2000,R,line,,12.37,36.66,13.18,36.66,
+Lead,tick ┤,2000,R,line,,13.04,35.89,13.04,37.35,
+Lead,dash,2100,L,line,,-10.44,39.15,-9.18,39.15,
+Lead,dash,2100,L,line,,-4.93,39.15,-3.59,39.15,
+Lead,dash,2100,R,line,,7.19,39.15,8.45,39.15,
+Lead,dash,2100,R,line,,12.70,39.15,14.04,39.15,
+Lead,tick ├,2200,L,line,,-11.25,41.84,-10.44,41.84,
+Lead,tick ├,2200,L,line,,-11.14,41.01,-11.14,42.67,
+Lead,tick ├,2200,L,line,,-5.32,41.84,-4.45,41.84,
+Lead,tick ├,2200,L,line,,-5.19,41.01,-5.19,42.67,
+Lead,tick ┤,2200,R,line,,8.31,41.84,9.05,41.84,
+Lead,tick ┤,2200,R,line,,8.95,40.88,8.95,42.67,
+Lead,tick ┤,2200,R,line,,14.23,41.84,15.04,41.84,
+Lead,tick ┤,2200,R,line,,14.91,41.01,14.91,42.61,
+Lead,dash,2300,L,line,,-12.04,44.58,-10.57,44.58,
+Lead,dash,2300,L,line,,-5.59,44.58,-4.26,44.58,
+Lead,dash,2300,R,line,,8.31,44.58,9.65,44.58,
+Lead,dash,2300,R,line,,14.63,44.58,16.03,44.58,
+Lead,tick ┤,2400,R,line,,9.51,47.50,10.24,47.50,
+Lead,tick ┤,2400,R,line,,10.15,46.53,10.15,48.46,
+Lead,tick ├,2400,L,line,,-12.78,47.54,-12.04,47.54,
+Lead,tick ├,2400,L,line,,-12.65,46.53,-12.65,48.46,
+Lead,tick ├,2400,L,line,,-5.99,47.54,-5.13,47.54,
+Lead,tick ├,2400,L,line,,-5.83,46.53,-5.83,48.46,
+Lead,tick ┤,2400,R,line,,16.03,47.54,16.77,47.54,
+Lead,tick ┤,2400,R,line,,16.69,46.53,16.69,48.46,
+Lead,dash,2500,R,line,,16.90,50.46,18.16,50.46,
+Lead,dash,2500,L,line,,-13.57,50.50,-12.30,50.50,
+Lead,dash,2500,L,line,,-6.25,50.50,-4.98,50.50,
+Lead,dash,2500,R,line,,9.45,50.52,10.90,50.52,
+Lead,tick ├,2600,L,line,,-14.50,53.68,-13.84,53.68,
+Lead,tick ├,2600,L,line,,-14.40,52.65,-14.40,54.71,
+Lead,tick ├,2600,L,line,,-6.65,53.68,-5.92,53.68,
+Lead,tick ├,2600,L,line,,-6.55,52.59,-6.55,54.78,
+Lead,tick ┤,2600,R,line,,10.77,53.68,11.51,53.68,
+Lead,tick ┤,2600,R,line,,11.41,52.65,11.41,54.78,
+Lead,tick ┤,2600,R,line,,18.70,53.68,19.36,53.68,
+Lead,tick ┤,2600,R,line,,19.26,52.59,19.26,54.71,
+Lead,dash,2700,L,line,,-15.37,56.84,-14.10,56.84,
+Lead,dash,2700,L,line,,-6.99,56.88,-5.72,56.88,
+Lead,dash,2700,R,line,,10.90,56.88,12.17,56.88,
+Lead,dash,2700,R,line,,19.23,56.88,20.49,56.88,
+Lead,tick ├,2800,L,line,,-16.43,60.24,-15.63,60.24,
+Lead,tick ├,2800,L,line,,-16.33,59.10,-16.33,61.37,
+Lead,tick ┤,2800,R,line,,12.17,60.24,12.91,60.24,
+Lead,tick ┤,2800,R,line,,12.83,59.10,12.83,61.37,
+Lead,tick ├,2800,L,line,,-7.45,60.28,-6.71,60.28,
+Lead,tick ├,2800,L,line,,-7.35,59.10,-7.35,61.37,
+Lead,tick ┤,2800,R,line,,21.09,60.28,21.89,60.28,
+Lead,tick ┤,2800,R,line,,21.75,59.05,21.75,61.44,
+Lead,dash,2900,L,line,,-17.43,63.73,-15.96,63.73,
+Lead,dash,2900,L,line,,-7.98,63.73,-6.52,63.73,
+Lead,dash,2900,R,line,,12.30,63.73,13.64,63.73,
+Lead,dash,2900,R,line,,21.82,63.73,23.22,63.73,
+Lead,tick ┤,3000,R,line,,23.75,67.23,24.54,67.23,
+Lead,tick ┤,3000,R,line,,24.45,65.89,24.45,68.55,
+Lead,tick ├,3000,L,line,,-18.42,67.26,-17.63,67.26,
+Lead,tick ├,3000,L,line,,-18.36,65.96,-18.36,68.48,
+Lead,tick ├,3000,L,line,,-8.31,67.26,-7.65,67.26,
+Lead,tick ├,3000,L,line,,-8.22,65.89,-8.22,68.55,
+Lead,tick ┤,3000,R,line,,13.64,67.26,14.37,67.26,
+Lead,tick ┤,3000,R,line,,14.30,65.96,14.30,68.48,
+Lead,dash,3100,L,line,,-19.49,70.94,-18.16,70.94,
+Lead,dash,3100,L,line,,-8.79,70.94,-7.39,70.94,
+Lead,dash,3100,R,line,,13.90,70.94,15.17,70.94,
+Lead,dash,3100,R,line,,24.62,70.98,25.94,70.98,
+Lead,tick ├,3200,L,line,,-20.68,74.88,-19.96,74.88,
+Lead,tick ├,3200,L,line,,-20.63,73.48,-20.63,76.40,
+Lead,tick ├,3200,L,line,,-9.32,74.88,-8.58,74.88,
+Lead,tick ├,3200,L,line,,-9.21,73.48,-9.21,76.27,
+Lead,tick ┤,3200,R,line,,15.37,74.88,16.03,74.88,
+Lead,tick ┤,3200,R,line,,15.96,73.48,15.96,76.27,
+Lead,tick ┤,3200,R,line,,26.68,74.88,27.41,74.88,
+Lead,tick ┤,3200,R,line,,27.34,73.41,27.34,76.27,
+Coax,label,,C,textbox,COAX,-21.22,-1.76,-17.63,-0.57,
+Coax,label,200,L,textbox,2,-23.55,1.23,-22.82,2.36,
+Coax,label,400,L,textbox,4,-23.55,3.56,-22.82,4.69,
+Coax,label,600,L,textbox,6,-23.62,6.42,-22.76,7.68,
+Coax,label,800,L,textbox,8,-23.62,10.28,-22.82,11.47,
+Coax,label,900,L,textbox,9,-23.62,12.61,-22.82,13.81,
+Coax,label,1000,L,textbox,10,-24.34,15.27,-22.89,16.47,
+Coax,label,1100,L,textbox,11,-24.34,18.33,-23.09,19.52,
+Coax,label,1200,L,textbox,12,-24.34,21.79,-22.89,22.98,
+Coax,label,1300,L,textbox,13,-24.34,25.72,-22.89,26.91,
+Coax,label,1400,L,textbox,14,-24.34,30.30,-22.89,31.49,
+Coax,label,1500,L,textbox,15,-24.34,35.63,-22.89,36.89,
+Coax,label,1600,L,textbox,16,-24.34,41.68,-22.89,42.87,
+Coax,label,1700,L,textbox,17,-24.34,48.66,-22.89,49.86,
+Coax,label,1800,L,textbox,18,-24.34,56.71,-22.89,57.84,
+Stadia,label,800,C,textbox,8,6.86,-4.16,7.45,-3.36,
+Stadia,label,1200,C,textbox,12,10.04,-3.23,11.18,-2.36,
+Stadia,label,1600,C,textbox,16,13.44,-2.76,14.57,-1.89,
+Stadia,label,2000,C,textbox,20,16.90,-2.50,17.89,-1.63,
+FIN,label,800,C,textbox,8,-2.26,1.43,-1.66,2.30,
+FIN,label,1200,C,textbox,12,0.73,2.43,1.86,3.36,
+FIN,label,1600,C,textbox,16,-2.72,3.36,-1.60,4.23,
+FIN,label,2000,C,textbox,20,0.73,4.36,1.86,5.22,
+FIN,label,2400,C,textbox,24,-2.72,5.42,-1.60,6.36,
+HESH,label,400,L,textbox,4,-11.31,4.96,-10.64,6.09,
+HESH,label,400,R,textbox,4,11.11,4.96,11.84,6.09,
+HESH,label,600,L,textbox,6,-11.44,7.89,-10.77,9.08,
+HESH,label,600,R,textbox,6,11.51,7.89,12.24,9.08,
+HESH,label,800,L,textbox,8,-11.78,11.21,-10.98,12.41,
+HESH,label,800,R,textbox,8,12.04,11.21,12.78,12.41,
+HESH,label,1000,L,textbox,10,-12.83,14.34,-11.11,15.79,
+HESH,label,1000,R,textbox,10,12.50,14.34,14.23,15.74,
+HESH,label,1200,L,textbox,12,-12.78,18.26,-11.31,19.39,
+HESH,label,1200,R,textbox,12,12.98,18.26,14.50,19.39,
+HESH,label,1400,L,textbox,14,-12.98,22.19,-11.44,23.38,
+HESH,label,1400,R,textbox,14,13.51,22.19,14.97,23.38,
+HESH,label,1600,L,textbox,16,-13.18,26.51,-11.64,27.65,
+HESH,label,1600,R,textbox,16,14.10,26.44,15.57,27.65,
+HESH,label,1800,L,textbox,18,-13.31,31.10,-11.71,32.23,
+HESH,label,1800,R,textbox,18,14.63,31.10,16.16,32.23,
+HESH,label,2000,L,textbox,20,-13.77,35.89,-11.91,37.22,
+HESH,label,2000,R,textbox,20,15.10,35.89,16.97,37.22,
+HESH,label,2200,L,textbox,22,-13.57,41.21,-12.04,42.48,
+HESH,label,2200,R,textbox,22,15.83,41.21,17.36,42.41,
+HESH,label,2400,L,textbox,24,-13.70,46.93,-12.24,48.07,
+HESH,label,2400,R,textbox,24,16.49,46.93,17.89,48.07,
+HESH,label,2600,L,textbox,26,-13.77,53.05,-12.30,54.25,
+HESH,label,2600,R,textbox,26,17.17,53.05,18.62,54.25,
+HESH,label,2800,L,textbox,28,-13.90,59.64,-12.44,60.77,
+HESH,label,2800,R,textbox,28,17.89,59.64,19.36,60.77,
+HESH,label,3000,L,textbox,30,-14.37,66.42,-12.57,67.82,
+HESH,label,3000,R,textbox,30,18.57,66.42,20.35,67.82,
+HESH,label,3200,L,textbox,32,-14.17,74.34,-12.70,75.47,
+HESH,label,3200,R,textbox,32,19.36,74.34,20.83,75.47,</script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 "use strict";
 /* =====================================================================
    GAS Gunnery Trainer
-   Coordinates: reticle positions are mrad in the sight frame (spec §3):
-   origin = zero circle, x right +, y down +. The sight frame is the gun
-   bore frame (the GAS is slaved to the gun, GAS-03/04).
+   Reticle: booklet geometry, mrad, origin = centre of the top circle, x right +, y down +.
+   The sight frame is the gun bore frame (slaved, unstabilised).
    World: metres, y up, gun at origin facing -z at azimuth 0, azimuth + = right.
    ===================================================================== */
 
@@ -643,13 +655,13 @@ const PRIMS = (() => {
     return o;
   });
 })();
-const LINE_W = 0.17, DOT_D = 0.17;  // mrad, spec §3
+const LINE_W = 0.20, DOT_D = 0.20;   // mrad
+const FIN_X = (() => { const d = PRIMS.filter(p => p.layer === 'FIN' && p.item === 'line dot'); return d.reduce((a, p) => a + p.x1, 0) / d.length; })();
 
-// aim-point tables taken straight from the geometry
 function aimTable(layer) {
   const m = new Map();
   for (const p of PRIMS) {
-    if (p.layer !== layer || p.item !== 'aim point' && p.item !== 'range line') continue;
+    if (p.layer !== layer || (p.item !== 'aim point' && p.item !== 'range line')) continue;
     if (!m.has(p.range)) m.set(p.range, []);
     m.get(p.range).push(p);
   }
@@ -661,34 +673,34 @@ function aimTable(layer) {
     if (circ) { x = circ.x1; y = circ.y1; }
     else if (vert) { x = vert.x1; y = ps.find(p => Math.abs(p.y1 - p.y2) < 0.01).y1; }
     else if (layer === 'Coax') { x = 0; y = ps[0].y1; }
-    else { // FIN: pair of dashes → gap centre on the vertical line; single dash → its centre
-      y = ps[0].y1; x = ps.length === 2 ? 0.03 : (ps[0].x1 + ps[0].x2) / 2;
-    }
+    else { y = ps[0].y1; x = ps.length === 2 ? FIN_X : (ps[0].x1 + ps[0].x2) / 2; }
     rows.push({ R, x, y });
   }
   return rows.sort((a, b) => a.R - b.R);
 }
 const RET = { FIN: aimTable('FIN'), HESH: aimTable('HESH'), COAX: aimTable('Coax') };
+// reference target height the stadia is drawn for (gap × range)
+const TANK_H = (() => {
+  const base = PRIMS.find(p => p.item === 'base line').y1;
+  const d = PRIMS.filter(p => p.item === 'range dash');
+  return Math.round(d.reduce((a, p) => a + (base - p.y1) * p.range / 1000, 0) / d.length * 100) / 100;
+})();
 
 // ---------------------------------------------------------------- ballistics
 const G1 = [[0,.2629],[.5,.2032],[.6,.2028],[.7,.2034],[.8,.2104],[.85,.2196],[.9,.2546],[.95,.3010],[1.0,.4805],[1.05,.5345],[1.1,.5664],[1.2,.6100],[1.3,.6359],[1.4,.6477],[1.5,.6521],[1.6,.6518],[1.8,.6435],[2.0,.6297],[2.2,.6141],[2.5,.5925],[3.0,.5585],[4.0,.5100]];
 function cdG1(M) {
   if (M <= 0) return G1[0][1];
-  for (let i = 1; i < G1.length; i++) if (M <= G1[i][0]) {
-    const [a, b] = G1[i - 1], [c, d] = G1[i]; return b + (d - b) * (M - a) / (c - a);
-  }
+  for (let i = 1; i < G1.length; i++) if (M <= G1[i][0]) { const [a, b] = G1[i - 1], [c, d] = G1[i]; return b + (d - b) * (M - a) / (c - a); }
   return G1[G1.length - 1][1];
 }
 const DEFAULTS = { finV: 1650, finL: 60, heshV: 670, heshBC: 1270, heshK: 0.242, coaxV: 838, coaxBC: 338 };
 const P = Object.assign({}, DEFAULTS);
 const DISP = { FIN: 0.15, HESH: 0.25, COAX: 0.6 };   // 1σ per axis, mrad (assumed)
-const DS = 2, SMAX = 6000;                             // table step and reach, m
-const TAB = {};                                        // per round: {t[], Y[], X[]} indexed by s/DS
-
+const DS = 2, SMAX = 6000;
+const TAB = {};
 function buildModel(round) {
   const g = 9.81, rho = 1.225, a0 = 340.3, dt = 0.0005;
-  let x = 0, y = 0, vx, vy = 0, t = 0;
-  let accel;
+  let x = 0, y = 0, vx, vy = 0, t = 0, accel;
   if (round === 'FIN') { vx = P.finV; const k = P.finL / 1000; accel = v => k * v; }
   else if (round === 'HESH') { vx = P.heshV; accel = v => rho * Math.PI / (8 * P.heshBC) * cdG1(v / a0) * v * v; }
   else { vx = P.coaxV; accel = v => rho * Math.PI / (8 * P.coaxBC) * cdG1(v / a0) * v * v; }
@@ -699,8 +711,7 @@ function buildModel(round) {
     vx += (-a * vx / v) * dt; vy += (-a * vy / v - g) * dt;
     px = x; py = y; pt = t; x += vx * dt; y += vy * dt; t += dt;
     while (i < n && x >= i * DS) {
-      const s = i * DS, f = (s - px) / (x - px);
-      const yy = py + f * (y - py), tt = pt + f * (t - pt);
+      const s = i * DS, f = (s - px) / (x - px), yy = py + f * (y - py), tt = pt + f * (t - pt);
       T[i] = tt; Y[i] = 1000 * Math.atan(-yy / s);
       X[i] = round === 'HESH' ? 1000 * P.heshK * Math.pow(tt, 1.83) / s : 0;
       i++;
@@ -710,23 +721,18 @@ function buildModel(round) {
   return { T, Y, X, n };
 }
 function interpRet(tbl, R, key) {
-  const pts = [{ R: 0, x: key === 'x' && tbl === RET.FIN ? 0.03 : 0, y: 0 }].concat(tbl);
-  if (R <= pts[pts.length - 1].R) {
-    for (let i = 1; i < pts.length; i++) if (R <= pts[i].R) {
-      const a = pts[i - 1], b = pts[i], f = (R - a.R) / (b.R - a.R); return a[key] + f * (b[key] - a[key]);
-    }
-  }
+  const x0 = tbl === RET.FIN ? FIN_X : 0;
+  const pts = [{ R: 0, x: x0, y: 0 }].concat(tbl);
+  if (R > pts[pts.length - 1].R) return null;
+  for (let i = 1; i < pts.length; i++) if (R <= pts[i].R) { const a = pts[i - 1], b = pts[i], f = (R - a.R) / (b.R - a.R); return a[key] + f * (b[key] - a[key]); }
   return null;
 }
 function rebuild() {
   for (const r of ['FIN', 'HESH', 'COAX']) {
-    const m = buildModel(r);
-    // reticle-ideal path: elevation & drift follow the marks; beyond the last mark scale with the model
-    const tbl = RET[r], last = tbl[tbl.length - 1], li = Math.round(last.R / DS);
+    const m = buildModel(r), tbl = RET[r], last = tbl[tbl.length - 1], li = Math.round(last.R / DS);
     const YA = new Float64Array(m.n), XA = new Float64Array(m.n);
     for (let i = 0; i < m.n; i++) {
-      const s = i * DS;
-      const y = interpRet(tbl, s, 'y'), x = interpRet(tbl, s, 'x');
+      const s = i * DS, y = interpRet(tbl, s, 'y'), x = interpRet(tbl, s, 'x');
       YA[i] = y !== null ? y : last.y * m.Y[i] / m.Y[li];
       XA[i] = x !== null ? x : (r === 'HESH' ? last.x * s / last.R : last.x);
     }
@@ -735,18 +741,18 @@ function rebuild() {
   renderBalTable();
 }
 function at(arr, s) { const f = s / DS, i = Math.floor(f); if (i >= arr.length - 1) return arr[arr.length - 1]; return arr[i] + (f - i) * (arr[i + 1] - arr[i]); }
-function modelY(r, s) { return at(TAB[r].model.Y, s); }
-function tof(r, s) { return at(TAB[r].T, s); }
+const modelY = (r, s) => at(TAB[r].model.Y, s);
+const tof = (r, s) => at(TAB[r].T, s);
 
 // ---------------------------------------------------------------- state
 const S = {
-  az: 0, el: 0.004,          // bore, rad
+  az: 0, el: 0.005, azEff: 0, elEff: 0.005,
   ammo: 'HESH', loaded: 'HESH', reload: 0, reloadFor: null,
-  mode: 'model', disp: true, vib: true, blast: true, explain: false, dev: false, zoom: false,
-  zoomC: { x: 1.5, y: 31.5 }, kick: 0, blastA: 0, coaxCool: 0, firing: false,
+  mode: 'reticle', disp: true, vib: true, blast: true, explain: false, dev: false, zoom: false, instr: false,
+  zoomC: { x: 1.5, y: 38.5 }, kick: 0, blastA: 0, coaxCool: 0, firing: false, fine: false,
   hover: null, pinLayer: null, mouse: null, time: 0
 };
-const VIEW = { cx: 1.5, cy: 31.5, r: 45 };   // eyepiece: 90 mrad field (assumed, gap 9), centred on the reticle
+const VIEW = { cx: 1.5, cy: 38.5, r: 52 };   // eyepiece field ~104 mrad (assumed, spec gap 9), centred on the reticle
 
 // ---------------------------------------------------------------- three.js scene
 const glCanvas = document.getElementById('gl'), ov = document.getElementById('ov'), ctx = ov.getContext('2d');
@@ -754,109 +760,171 @@ const sightEl = document.getElementById('sight');
 const renderer = new THREE.WebGLRenderer({ canvas: glCanvas, antialias: true, logarithmicDepthBuffer: true });
 renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
 const scene = new THREE.Scene();
-const SKY = new THREE.Color(0xc9d3d6);
-scene.background = SKY;
-scene.fog = new THREE.Fog(0xc4cdcf, 2500, 14000);
-const camera = new THREE.PerspectiveCamera(5, 1, 0.5, 30000);
+scene.fog = new THREE.Fog(0xc9d0cc, 1800, 15000);
+const camera = new THREE.PerspectiveCamera(5, 1, 0.5, 40000);
 camera.rotation.order = 'YXZ';
 const MUZZLE = new THREE.Vector3(0, 2.4, 0);
 camera.position.copy(MUZZLE);
-scene.add(new THREE.HemisphereLight(0xdfe8ec, 0x5b5a3e, 0.75));
-const sun = new THREE.DirectionalLight(0xfff3df, 0.85); sun.position.set(-3000, 4000, 1500); scene.add(sun);
+scene.add(new THREE.HemisphereLight(0xe6edf0, 0x5d5a40, 0.72));
+const sun = new THREE.DirectionalLight(0xfff1d8, 0.95); sun.position.set(-3000, 3200, 1800); scene.add(sun);
 
-// terrain: flat firing area out to ~4 km (keeps ranges true), rising hills beyond
+// sky dome: pale haze at the horizon, cooler overhead
+(function sky() {
+  const g = new THREE.SphereGeometry(30000, 32, 16), col = [], pos = g.attributes.position;
+  const hz = new THREE.Color(0xd6dad2), up = new THREE.Color(0x8fa6b8), c = new THREE.Color();
+  for (let i = 0; i < pos.count; i++) { const h = Math.max(0, pos.getY(i) / 30000); c.copy(hz).lerp(up, Math.pow(h, 0.45)); col.push(c.r, c.g, c.b); }
+  g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  scene.add(new THREE.Mesh(g, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, fog: false, depthWrite: false })));
+})();
+
+// noise
 function hash(x, z) { const s = Math.sin(x * 127.1 + z * 311.7) * 43758.5453; return s - Math.floor(s); }
 function vnoise(x, z) {
-  const xi = Math.floor(x), zi = Math.floor(z), xf = x - xi, zf = z - zi;
-  const u = xf * xf * (3 - 2 * xf), v = zf * zf * (3 - 2 * zf);
+  const xi = Math.floor(x), zi = Math.floor(z), xf = x - xi, zf = z - zi, u = xf * xf * (3 - 2 * xf), v = zf * zf * (3 - 2 * zf);
   const a = hash(xi, zi), b = hash(xi + 1, zi), c = hash(xi, zi + 1), d = hash(xi + 1, zi + 1);
   return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
 }
-function fbm(x, z) { let s = 0, a = 0.5, f = 1; for (let i = 0; i < 5; i++) { s += a * vnoise(x * f, z * f); f *= 2; a *= 0.5; } return s; }
+function fbm(x, z, o = 5) { let s = 0, a = 0.5, f = 1; for (let i = 0; i < o; i++) { s += a * vnoise(x * f, z * f); f *= 2; a *= 0.5; } return s; }
+// flat firing area (keeps ranges true) with rising hills beyond ~4 km
 function groundH(x, z) {
-  const d = Math.hypot(x, z);
-  if (d < 4200) return 0;
-  const ramp = Math.min(1, (d - 4200) / 3500);
-  return ramp * ramp * (40 + 260 * fbm(x / 2600, z / 2600));
+  const d = Math.hypot(x, z); if (d < 4300) return 0;
+  const ramp = Math.min(1, (d - 4300) / 3500); return ramp * ramp * (40 + 260 * fbm(x / 2600, z / 2600));
 }
-(function buildTerrain() {
-  const size = 26000, seg = 260;
-  const geo = new THREE.PlaneGeometry(size, size, seg, seg); geo.rotateX(-Math.PI / 2);
-  const pos = geo.attributes.position, col = new Float32Array(pos.count * 3);
-  const cA = new THREE.Color(0x767552), cB = new THREE.Color(0x9a8d66), cC = new THREE.Color(0x56603c), tmp = new THREE.Color();
-  for (let i = 0; i < pos.count; i++) {
-    const x = pos.getX(i), z = pos.getZ(i);
-    pos.setY(i, groundH(x, z));
-    const n = fbm(x / 900, z / 900), m = vnoise(x / 140, z / 140);
-    tmp.copy(cA).lerp(cB, Math.max(0, Math.min(1, n * 1.6 - 0.4))).lerp(cC, m * 0.35);
-    col[i * 3] = tmp.r; col[i * 3 + 1] = tmp.g; col[i * 3 + 2] = tmp.b;
-  }
-  geo.setAttribute('color', new THREE.BufferAttribute(col, 3)); geo.computeVertexNormals();
-  // detail texture so the ground reads at ×8
-  const tc = document.createElement('canvas'); tc.width = tc.height = 256; const g = tc.getContext('2d');
+const GROUND = { dry: new THREE.Color(0x9c9064), green: new THREE.Color(0x737a49), dark: new THREE.Color(0x5a6239), dirt: new THREE.Color(0x8f7754) };
+function groundColor(x, z, out) {
+  const n = fbm(x / 700, z / 700), m = fbm(x / 160 + 9, z / 160 - 3, 4), q = vnoise(x / 45, z / 45);
+  out.copy(GROUND.green).lerp(GROUND.dry, Math.max(0, Math.min(1, (n - 0.35) * 2.4)));
+  out.lerp(GROUND.dark, Math.max(0, (m - 0.55) * 1.8));
+  // a dirt track wandering across the range
+  const track = Math.abs(z + 1450 + 260 * Math.sin(x / 900)); if (track < 7) out.lerp(GROUND.dirt, 0.75 * (1 - track / 7));
+  out.multiplyScalar(0.94 + q * 0.12);
+  return out;
+}
+const grassTex = (() => {
+  const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d');
   const img = g.createImageData(256, 256);
   for (let y = 0; y < 256; y++) for (let x = 0; x < 256; x++) {
-    const v = 222 + 22 * (fbm(x / 13, y / 13) - 0.5) * 2 + (hash(x, y) - 0.5) * 10;
-    const k = (y * 256 + x) * 4; img.data[k] = img.data[k + 1] = img.data[k + 2] = Math.max(0, Math.min(255, v)); img.data[k + 3] = 255;
+    const v = 225 + 18 * (fbm(x / 11, y / 11, 3) - 0.5) * 2 + (hash(x, y) - 0.5) * 16, k = (y * 256 + x) * 4;
+    img.data[k] = v; img.data[k + 1] = v + 2; img.data[k + 2] = v - 6; img.data[k + 3] = 255;
   }
   g.putImageData(img, 0, 0);
-  const tex = new THREE.CanvasTexture(tc); tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(size / 90, size / 90);
-  tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
-  const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ vertexColors: true, map: tex }));
-  scene.add(mesh);
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = renderer.capabilities.getMaxAnisotropy(); return t;
 })();
-// scrub: scattered bushes give depth cues
-(function buildBushes() {
-  const geo = new THREE.IcosahedronGeometry(1, 0);
-  const mat = new THREE.MeshLambertMaterial({ color: 0x4a5530 });
-  const N = 900, inst = new THREE.InstancedMesh(geo, mat, N), m = new THREE.Matrix4(), q = new THREE.Quaternion();
-  let k = 0, seed = 7;
-  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-  while (k < N) {
-    const r = 450 + rnd() * 3900, a = (rnd() - 0.5) * 1.6;
-    const x = Math.sin(a) * r, z = -Math.cos(a) * r;
-    const sc = 0.5 + rnd() * 1.1;
-    m.compose(new THREE.Vector3(x, groundH(x, z) + sc * 0.45, z), q, new THREE.Vector3(sc * 1.5, sc * 0.75, sc * 1.4));
-    inst.setMatrixAt(k++, m);
+function terrainMesh(x0, x1, z0, z1, sx, sz, inner) {
+  const geo = new THREE.PlaneGeometry(x1 - x0, z1 - z0, sx, sz); geo.rotateX(-Math.PI / 2); geo.translate((x0 + x1) / 2, 0, (z0 + z1) / 2);
+  const pos = geo.attributes.position, col = new Float32Array(pos.count * 3), c = new THREE.Color(), uv = geo.attributes.uv;
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i), z = pos.getZ(i);
+    let h = groundH(x, z);
+    if (!inner && x > -4000 && x < 4000 && z > -4300 && z < 60) h = -2;   // the near mesh covers this
+    pos.setY(i, h); groundColor(x, z, c); col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
+    uv.setXY(i, x / 35, z / 35);
   }
+  geo.setAttribute('color', new THREE.BufferAttribute(col, 3)); geo.computeVertexNormals();
+  scene.add(new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ vertexColors: true, map: grassTex })));
+}
+terrainMesh(-13000, 13000, -13000, 13000, 220, 220, false);
+terrainMesh(-4000, 4000, -4300, 60, 400, 218, true);
+
+// vegetation: bushes and tree lines (visual only)
+const VEG = { bush: new THREE.MeshLambertMaterial({ color: 0x485330 }), bush2: new THREE.MeshLambertMaterial({ color: 0x5b6038 }),
+  leaf: new THREE.MeshLambertMaterial({ color: 0x3f4a2b }), trunk: new THREE.MeshLambertMaterial({ color: 0x4a3f30 }) };
+let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+function scatter(geo, mat, N, place) {
+  const inst = new THREE.InstancedMesh(geo, mat, N), m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler();
+  for (let k = 0; k < N; k++) { const p = place(k); e.set(0, rnd() * 6.28, 0); q.setFromEuler(e); m.compose(p.pos, q, p.scale); inst.setMatrixAt(k, m); }
   scene.add(inst);
-})();
+}
+const bushGeo = (() => { const g = new THREE.IcosahedronGeometry(1, 1), p = g.attributes.position; for (let i = 0; i < p.count; i++) { const k = 0.8 + hash(i * 1.7, p.getY(i) * 3.1) * 0.4; p.setXYZ(i, p.getX(i) * k, p.getY(i) * k, p.getZ(i) * k); } g.computeVertexNormals(); return g; })();
+function freeSpot(x, z) { return !LAYOUT_SPOTS.some(([sx, sz]) => Math.hypot(x - sx, z - sz) < 22); }
+const LAYOUT_SPOTS = [];
+function buildVegetation() {
+  const spots = [];
+  while (spots.length < 900) {
+    const r = 220 + rnd() * 4000, a = (rnd() - 0.5) * 1.7, x = Math.sin(a) * r, z = -Math.cos(a) * r;
+    if (freeSpot(x, z)) spots.push([x, z]);
+  }
+  scatter(bushGeo, VEG.bush, 600, k => { const [x, z] = spots[k], s = 0.6 + rnd() * 1.2; return { pos: new THREE.Vector3(x, s * 0.4, z), scale: new THREE.Vector3(s * 1.6, s * 0.8, s * 1.4) }; });
+  scatter(bushGeo, VEG.bush2, 300, k => { const [x, z] = spots[600 + k], s = 0.5 + rnd() * 0.8; return { pos: new THREE.Vector3(x, s * 0.35, z), scale: new THREE.Vector3(s * 1.4, s * 0.7, s * 1.6) }; });
+  // tree lines: landmarks at 1.8–4 km
+  const trees = [];
+  const lines = [[-0.32, 1900, 260], [0.18, 2700, 420], [-0.05, 3600, 600], [0.42, 3300, 380], [-0.55, 3000, 500]];
+  for (const [a, r, len] of lines) for (let i = 0; i < len / 9; i++) {
+    const t = i * 9 - len / 2, x = Math.sin(a) * r + Math.cos(a) * t + (rnd() - 0.5) * 8, z = -Math.cos(a) * r + Math.sin(a) * t + (rnd() - 0.5) * 8;
+    trees.push([x, z, 7 + rnd() * 6]);
+  }
+  const crown = new THREE.IcosahedronGeometry(1, 1);
+  scatter(crown, VEG.leaf, trees.length, k => { const [x, z, h] = trees[k]; return { pos: new THREE.Vector3(x, h * 0.62, z), scale: new THREE.Vector3(h * 0.33, h * 0.42, h * 0.33) }; });
+  scatter(new THREE.CylinderGeometry(0.15, 0.22, 1, 5), VEG.trunk, trees.length, k => { const [x, z, h] = trees[k]; return { pos: new THREE.Vector3(x, h * 0.25, z), scale: new THREE.Vector3(1, h * 0.5, 1) }; });
+}
 
 // ---------------------------------------------------------------- targets
+function camoTex(base, blobs) {
+  const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d');
+  g.fillStyle = base; g.fillRect(0, 0, 256, 256);
+  let sd = 5; const r = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
+  for (const [col, n, size] of blobs) {
+    g.fillStyle = col;
+    for (let i = 0; i < n; i++) {
+      g.beginPath(); const cx = r() * 256, cy = r() * 256, rad = size * (0.5 + r());
+      for (let k = 0; k <= 10; k++) { const a = k / 10 * Math.PI * 2, rr = rad * (0.6 + r() * 0.6); g.lineTo(cx + Math.cos(a) * rr * 1.5, cy + Math.sin(a) * rr); }
+      g.fill();
+    }
+  }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t;
+}
+const CAMO = camoTex('#5d6340', [['#3e4630', 14, 22], ['#6e5f42', 10, 18], ['#26291f', 7, 12]]);
 const MAT = {
-  tank: new THREE.MeshLambertMaterial({ color: 0x5b5f3b }), tankDark: new THREE.MeshLambertMaterial({ color: 0x41452a }),
-  dead: new THREE.MeshLambertMaterial({ color: 0x24221d }), truck: new THREE.MeshLambertMaterial({ color: 0x66654a }),
-  inf: new THREE.MeshLambertMaterial({ color: 0x4d4b38 }), berm: new THREE.MeshLambertMaterial({ color: 0x8a7f55 }),
-  shadow: new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.25, depthWrite: false })
+  hull: new THREE.MeshLambertMaterial({ map: CAMO }), dark: new THREE.MeshLambertMaterial({ color: 0x2c2f24 }),
+  wheel: new THREE.MeshLambertMaterial({ color: 0x23251e }), dead: new THREE.MeshLambertMaterial({ color: 0x1f1d19 }),
+  truck: new THREE.MeshLambertMaterial({ map: CAMO, color: 0xbbb8a0 }), tarp: new THREE.MeshLambertMaterial({ color: 0x6b6648 }),
+  inf: new THREE.MeshLambertMaterial({ color: 0x55553d }), skin: new THREE.MeshLambertMaterial({ color: 0x4b4636 }),
+  berm: new THREE.MeshLambertMaterial({ color: 0x857a55 }), net: new THREE.MeshLambertMaterial({ color: 0x4a5434, transparent: true, opacity: 0.92 })
 };
-const TANK_H = 1.90;   // reference target height for the range estimator (spec §1, assumption)
-function box(w, h, d, mat, x, y, z) { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.position.set(x, y, z); return m; }
+const shadowTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'); const gr = g.createRadialGradient(32, 32, 4, 32, 32, 32); gr.addColorStop(0, 'rgba(0,0,0,.55)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })();
+const SHADOW = new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, depthWrite: false });
+function mesh(geo, mat, x, y, z) { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); return m; }
+function box(w, h, d, mat, x, y, z) { return mesh(new THREE.BoxGeometry(w, h, d), mat, x, y, z); }
+function shadow(w, d) { const s = new THREE.Mesh(new THREE.PlaneGeometry(w, d), SHADOW); s.rotation.x = -Math.PI / 2; s.position.y = 0.03; s.userData.noDead = true; return s; }
 function makeTank() {
-  const g = new THREE.Group();
-  g.add(box(3.6, 0.85, 7.4, MAT.tankDark, 0, 0.45, 0));         // tracks + lower hull
-  g.add(box(3.4, 0.42, 6.6, MAT.tank, 0, 1.06, 0.1));           // upper hull
-  const glacis = box(3.3, 0.5, 1.2, MAT.tank, 0, 0.95, -3.4); glacis.rotation.x = -0.55; g.add(glacis);
-  g.add(box(2.5, 0.63, 3.0, MAT.tank, 0, 1.585, 0.3));          // turret, roof at 1.90 m
-  const gun = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.11, 5.4, 8), MAT.tankDark);
-  gun.rotation.x = Math.PI / 2; gun.position.set(0, 1.62, -3.9); g.add(gun);
-  const sh = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 8.2), MAT.shadow); sh.rotation.x = -Math.PI / 2; sh.position.y = 0.02; g.add(sh);
-  return { group: g, boxes: [[-1.8, 0, -3.7, 1.8, 1.27, 3.7], [-1.25, 1.27, -1.2, 1.25, TANK_H, 1.8]], h: TANK_H };
+  const H = TANK_H, g = new THREE.Group(), turret = new THREE.Group();
+  g.add(shadow(6, 10));
+  for (const sx of [-1, 1]) {
+    g.add(box(0.62, 0.9, 7.2, MAT.dark, sx * 1.55, 0.55, 0));                         // track run
+    for (let i = 0; i < 6; i++) { const w = mesh(new THREE.CylinderGeometry(0.36, 0.36, 0.2, 10), MAT.wheel, sx * 1.88, 0.42, -2.6 + i * 1.04); w.rotation.z = Math.PI / 2; g.add(w); }
+    g.add(box(0.08, 0.5, 6.4, MAT.hull, sx * 1.9, 0.92, 0.2));                         // side skirt
+  }
+  g.add(box(3.1, 0.62, 6.8, MAT.hull, 0, 1.12, 0.15));                                 // hull
+  const glacis = box(3.1, 0.12, 1.4, MAT.hull, 0, 1.18, -3.55); glacis.rotation.x = 0.35; g.add(glacis);
+  const tb = H - 1.43;                                                                 // turret height to reach H
+  const tur = mesh(new THREE.CylinderGeometry(1.25, 1.5, tb, 6), MAT.hull, 0, 1.43 + tb / 2, 0.3); tur.scale.z = 1.35; tur.rotation.y = Math.PI / 6; turret.add(tur);
+  turret.add(mesh(new THREE.CylinderGeometry(0.32, 0.35, 0.18, 10), MAT.dark, 0.5, H - 0.01, 0.6));   // cupola (inside H)
+  const mant = box(0.8, 0.5, 0.5, MAT.hull, 0, 1.43 + tb * 0.5, -1.6); turret.add(mant);
+  const gun = mesh(new THREE.CylinderGeometry(0.075, 0.1, 5.6, 10), MAT.dark, 0, 1.43 + tb * 0.5, -4.4); gun.rotation.x = Math.PI / 2; turret.add(gun);
+  const fume = mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.9, 10), MAT.dark, 0, 1.43 + tb * 0.5, -3.5); fume.rotation.x = Math.PI / 2; turret.add(fume);
+  g.add(turret);
+  return { group: g, turret, boxes: [[-1.95, 0, -3.8, 1.95, 1.43, 3.7], [-1.5, 1.43, -1.8, 1.5, H, 2.4]], h: H, len: 7.6 };
 }
 function makeTruck() {
   const g = new THREE.Group();
-  g.add(box(2.4, 1.2, 7.0, MAT.tankDark, 0, 0.6, 0));
-  g.add(box(2.4, 1.3, 2.0, MAT.truck, 0, 1.6, -2.4));
-  g.add(box(2.4, 1.6, 4.6, MAT.truck, 0, 2.0, 1.0));
-  return { group: g, boxes: [[-1.2, 0, -3.5, 1.2, 2.8, 3.5]], h: 2.8 };
+  g.add(shadow(4, 9));
+  for (const z of [-2.6, 1.2, 2.6]) for (const sx of [-1, 1]) { const w = mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.35, 12), MAT.wheel, sx * 1.05, 0.5, z); w.rotation.z = Math.PI / 2; g.add(w); }
+  g.add(box(2.3, 0.4, 7.0, MAT.dark, 0, 0.95, 0));
+  g.add(box(2.4, 1.5, 1.9, MAT.truck, 0, 1.9, -2.5));
+  g.add(box(2.3, 0.5, 0.06, MAT.dark, 0, 2.2, -3.46));                                 // windscreen
+  const tarp = mesh(new THREE.CylinderGeometry(1.2, 1.2, 4.6, 12, 1, false, 0, Math.PI), MAT.tarp, 0, 1.75, 1.0); tarp.rotation.x = Math.PI / 2; tarp.rotation.y = Math.PI / 2; g.add(tarp);
+  g.add(box(2.4, 0.6, 4.6, MAT.tarp, 0, 1.45, 1.0));
+  return { group: g, boxes: [[-1.25, 0, -3.5, 1.25, 2.95, 3.5]], h: 2.95, len: 7 };
 }
 function makeInfantry() {
   const g = new THREE.Group(), boxes = [];
   const offs = [[-6, 0], [-3, 1.5], [0, -0.5], [3, 1], [6, 0]];
   for (const [x, z] of offs) {
-    const b = box(0.5, 1.75, 0.35, MAT.inf, x, 0.875, z); g.add(b);
-    boxes.push([x - 0.25, 0, z - 0.18, x + 0.25, 1.75, z + 0.18]);
+    const f = new THREE.Group(); f.position.set(x, 0, z);
+    f.add(box(0.42, 0.85, 0.28, MAT.inf, 0, 0.43, 0)); f.add(box(0.48, 0.65, 0.3, MAT.inf, 0, 1.18, 0)); f.add(mesh(new THREE.SphereGeometry(0.15, 8, 6), MAT.skin, 0, 1.63, 0));
+    g.add(f); boxes.push([x - 0.25, 0, z - 0.18, x + 0.25, 1.78, z + 0.18]);
   }
-  return { group: g, boxes, h: 1.75, perBox: true };
+  return { group: g, boxes, h: 1.78, perBox: true, len: 12 };
 }
 let targets = [], tid = 0;
 function addTarget(kind, range, azDeg, opts = {}) {
@@ -864,54 +932,49 @@ function addTarget(kind, range, azDeg, opts = {}) {
   const a = azDeg * Math.PI / 180;
   const t = {
     id: ++tid, kind, label: (kind === 'tank' ? 'Tank' : kind === 'truck' ? 'Truck' : 'Infantry') + ' T' + tid,
-    obj: mk.group, boxes: mk.boxes, h: mk.h, perBox: mk.perBox, alive: true, hits: 0, boxAlive: mk.boxes.map(() => true),
+    obj: mk.group, turret: mk.turret, boxes: mk.boxes, h: mk.h, perBox: mk.perBox, alive: true, hits: 0, boxAlive: mk.boxes.map(() => true),
     pos: new THREE.Vector3(Math.sin(a) * range, 0, -Math.cos(a) * range),
-    yaw: opts.yaw !== undefined ? opts.yaw : (Math.random() - 0.5) * 1.2 + a,
-    speed: opts.speed || 0, travel: opts.travel || 0, origin: null, dir: 1, hullDown: !!opts.hullDown,
-    born: S.time, eng: null
+    yaw: opts.yaw !== undefined ? opts.yaw : (Math.random() - 0.5) * 1.6 + a,
+    speed: opts.speed || 0, travel: opts.travel || 0, dir: 1, born: S.time, eng: null, killedAt: null
   };
   t.origin = t.pos.clone();
-  if (t.speed) t.yaw = a + Math.PI / 2;   // crossing, broadside to the gun
-  if (t.hullDown) {
-    const b = box(10, 1.3, 2.2, MAT.berm, 0, 0.65, 0);
-    t.berm = b; scene.add(b);
-    t.bermYaw = a;
+  if (t.speed) t.yaw = a + Math.PI / 2;
+  if (opts.hullDown) {      // earth mound in front: only the turret shows
+    const b = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2), MAT.berm);
+    b.scale.set(7, 1.5, 2.6); t.berm = b; t.bermYaw = a; scene.add(b);
   }
-  scene.add(t.obj); placeTarget(t);
-  targets.push(t);
+  if (opts.netted) {        // camouflage net draped over the hull
+    const n = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), MAT.net); n.scale.set(2.3, 1.15, 4.4); n.position.y = 0.35; n.userData.noDead = true; t.obj.add(n);
+  }
+  scene.add(t.obj); placeTarget(t); targets.push(t);
   return t;
 }
 function placeTarget(t) {
   t.obj.position.copy(t.pos); t.obj.rotation.y = -t.yaw;
-  if (t.berm) {
-    const a = t.bermYaw, d = t.pos.clone().add(new THREE.Vector3(-Math.sin(a) * 6, 0, Math.cos(a) * 6));
-    t.berm.position.set(d.x, 0.65, d.z); t.berm.rotation.y = -a;
-  }
+  if (t.berm) { const a = t.bermYaw; t.berm.position.set(t.pos.x - Math.sin(a) * 6, 0, t.pos.z + Math.cos(a) * 6); t.berm.rotation.y = -a; }
 }
-function clearTargets() {
-  for (const t of targets) { scene.remove(t.obj); if (t.berm) scene.remove(t.berm); if (t.smoke) t.smoke.alive = false; }
-  targets = [];
-}
-function trueRange(t) { return Math.hypot(t.pos.x - MUZZLE.x, t.pos.z - MUZZLE.z); }
+function clearTargets() { for (const t of targets) { scene.remove(t.obj); if (t.berm) scene.remove(t.berm); } targets = []; }
+const trueRange = t => Math.hypot(t.pos.x - MUZZLE.x, t.pos.z - MUZZLE.z);
 
 // ---------------------------------------------------------------- effects
-function radialTex(inner, outer) {
+function radialTex(stops) {
   const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d');
-  const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, inner); gr.addColorStop(1, outer);
-  g.fillStyle = gr; g.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c);
+  const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32); stops.forEach(([o, col]) => gr.addColorStop(o, col)); g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+  return new THREE.CanvasTexture(c);
 }
 const TEX = {
-  dust: radialTex('rgba(196,180,140,0.95)', 'rgba(196,180,140,0)'),
-  smoke: radialTex('rgba(40,38,34,0.9)', 'rgba(40,38,34,0)'),
-  flash: radialTex('rgba(255,220,140,1)', 'rgba(255,120,30,0)'),
-  tracer: radialTex('rgba(255,240,200,1)', 'rgba(255,140,40,0)'),
-  tracerR: radialTex('rgba(255,210,190,1)', 'rgba(255,40,30,0)')
+  dust: radialTex([[0, 'rgba(190,172,132,.95)'], [1, 'rgba(190,172,132,0)']]),
+  smoke: radialTex([[0, 'rgba(28,26,24,.95)'], [0.6, 'rgba(40,38,34,.6)'], [1, 'rgba(40,38,34,0)']]),
+  flame: radialTex([[0, 'rgba(255,245,200,1)'], [0.3, 'rgba(255,170,50,.95)'], [1, 'rgba(220,60,10,0)']]),
+  flash: radialTex([[0, 'rgba(255,235,170,1)'], [1, 'rgba(255,120,30,0)']]),
+  tracer: radialTex([[0, 'rgba(255,240,200,1)'], [1, 'rgba(255,140,40,0)']]),
+  tracerR: radialTex([[0, 'rgba(255,210,190,1)'], [1, 'rgba(255,40,30,0)']])
 };
 const fx = [];
 function puff(pos, tex, size0, size1, life, opts = {}) {
   const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, blending: opts.add ? THREE.AdditiveBlending : THREE.NormalBlending, fog: true });
   const sp = new THREE.Sprite(mat); sp.position.copy(pos); sp.scale.setScalar(size0); scene.add(sp);
-  fx.push({ sp, t: 0, life, size0, size1, rise: opts.rise || 0, a0: opts.alpha || 1 });
+  fx.push({ sp, t: 0, life, size0, size1, rise: opts.rise || 0, drift: opts.drift || 0, a0: opts.alpha || 1 });
 }
 function updateFx(dt) {
   for (let i = fx.length - 1; i >= 0; i--) {
@@ -919,39 +982,40 @@ function updateFx(dt) {
     if (k >= 1) { scene.remove(f.sp); f.sp.material.dispose(); fx.splice(i, 1); continue; }
     f.sp.scale.setScalar(f.size0 + (f.size1 - f.size0) * Math.sqrt(k));
     f.sp.material.opacity = f.a0 * (1 - k);
-    f.sp.position.y += f.rise * dt;
+    f.sp.position.y += f.rise * dt; f.sp.position.x += f.drift * dt;
   }
-  for (const t of targets) if (!t.alive && t.kind !== 'infantry' && S.time - (t.lastSmoke || 0) > 0.35) {
-    t.lastSmoke = S.time; const p = t.pos.clone(); p.y = t.h + 0.5;
-    puff(p, TEX.smoke, 2, 9, 5, { rise: 2.5, alpha: 0.7 });
+  // burning wrecks: fire + a thick black smoke column
+  for (const t of targets) if (!t.alive && t.kind !== 'infantry') {
+    const age = S.time - t.killedAt, burning = age < 45;
+    if (burning && S.time - (t.lastFlame || 0) > 0.07) {
+      t.lastFlame = S.time; const p = t.pos.clone(); p.x += (Math.random() - 0.5) * 2.4; p.z += (Math.random() - 0.5) * 3; p.y = t.h * 0.8;
+      puff(p, TEX.flame, 1.4, 3.2, 0.55, { add: true, rise: 3 });
+    }
+    if (S.time - (t.lastSmoke || 0) > (burning ? 0.16 : 0.5)) {
+      t.lastSmoke = S.time; const p = t.pos.clone(); p.y = t.h + 1;
+      puff(p, TEX.smoke, 2.5, 13, 8, { rise: 4.5, drift: 1.2, alpha: burning ? 0.85 : 0.45 });
+    }
   }
 }
 
 // ---------------------------------------------------------------- projectiles
-const shells = [];
+const shells = [], shotLog = [];
 let shotSeq = 0;
-const shotLog = [];
 function gauss() { let u = 0, v = 0; while (!u) u = Math.random(); while (!v) v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+const dirOf = (az, el) => new THREE.Vector3(Math.sin(az) * Math.cos(el), Math.sin(el), -Math.cos(az) * Math.cos(el));
 function fire(round) {
-  const sd = S.disp ? DISP[round] / 1000 : 0;
-  const az0 = S.azEff + gauss() * sd, el0 = S.elEff + gauss() * sd;
-  const isCoax = round === 'COAX';
+  const sd = S.disp ? DISP[round] / 1000 : 0, isCoax = round === 'COAX';
   const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: isCoax ? TEX.tracerR : TEX.tracer, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, sizeAttenuation: false, fog: false }));
-  sp.scale.setScalar(isCoax ? 0.012 : 0.02); scene.add(sp);
-  const sh = { id: ++shotSeq, round, az0, el0, t: 0, s: 0, prev: MUZZLE.clone(), sp, mode: S.mode, firedAt: S.time,
-    estimate: parseFloat(document.getElementById('estimate').value) || null, aimEl: S.elEff, aimAz: S.azEff };
-  shells.push(sh);
+  sp.scale.setScalar(isCoax ? 0.011 : 0.018); scene.add(sp);
+  shells.push({ id: ++shotSeq, round, az0: S.azEff + gauss() * sd, el0: S.elEff + gauss() * sd, t: 0, s: 0, prev: MUZZLE.clone(), sp, mode: S.mode,
+    firedAt: S.time, estimate: parseFloat(document.getElementById('estimate').value) || null });
   if (!isCoax) {
     S.kick = 1; if (S.blast) S.blastA = 0.85;
     puff(MUZZLE.clone().add(dirOf(S.azEff, S.elEff).multiplyScalar(25)), TEX.dust, 4, 16, 1.4, { alpha: 0.5 });
   }
 }
-function dirOf(az, el) { return new THREE.Vector3(Math.sin(az) * Math.cos(el), Math.sin(el), -Math.cos(az) * Math.cos(el)); }
-// position of the round at horizontal distance s along its path
 function shellPos(sh, s) {
-  const tb = TAB[sh.round][sh.mode];
-  const Y = at(tb.Y, s) / 1000, X = at(tb.X, s) / 1000;
-  const az = sh.az0 + X, el = sh.el0 - Y;
+  const tb = TAB[sh.round][sh.mode], az = sh.az0 + at(tb.X, s) / 1000, el = sh.el0 - at(tb.Y, s) / 1000;
   return new THREE.Vector3(MUZZLE.x + Math.sin(az) * s, MUZZLE.y + s * Math.tan(el), MUZZLE.z - Math.cos(az) * s);
 }
 function sForTime(round, t, sGuess) {
@@ -960,7 +1024,7 @@ function sForTime(round, t, sGuess) {
   if (i >= T.length - 1) return null;
   const f = (t - T[i]) / (T[i + 1] - T[i]); return (i + Math.max(0, Math.min(1, f))) * DS;
 }
-function segBox(p0, p1, b) {  // slab test, returns param 0..1 or null
+function segBox(p0, p1, b) {
   let t0 = 0, t1 = 1; const d = [p1.x - p0.x, p1.y - p0.y, p1.z - p0.z], o = [p0.x, p0.y, p0.z];
   for (let k = 0; k < 3; k++) {
     const lo = b[k], hi = b[k + 3];
@@ -970,178 +1034,187 @@ function segBox(p0, p1, b) {  // slab test, returns param 0..1 or null
   }
   return t0;
 }
-function toLocal(t, p) { const v = p.clone().sub(t.pos); const c = Math.cos(-t.yaw), s = Math.sin(-t.yaw); return new THREE.Vector3(v.x * c + v.z * s, v.y, -v.x * s + v.z * c); }
+function localOf(origin, yaw, p) { const v = p.clone().sub(origin), c = Math.cos(-yaw), s = Math.sin(-yaw); return new THREE.Vector3(v.x * c + v.z * s, v.y, -v.x * s + v.z * c); }
 function updateShells(dt) {
   for (let i = shells.length - 1; i >= 0; i--) {
     const sh = shells[i]; sh.t += dt;
     const s = sForTime(sh.round, sh.t, sh.s);
     if (s === null || s > SMAX - DS) { finishShell(sh, null, null); removeShell(i); continue; }
     const p = shellPos(sh, s);
-    // targets
     let best = null;
     for (const t of targets) {
-      const l0 = toLocal(t, sh.prev), l1 = toLocal(t, p);
-      t.boxes.forEach((b, bi) => {
-        if (t.perBox && !t.boxAlive[bi]) return;
-        const u = segBox(l0, l1, b); if (u !== null && (!best || u < best.u)) best = { u, t, bi };
-      });
-      if (t.berm) {
-        const bl0 = bermLocal(t, sh.prev), bl1 = bermLocal(t, p);
-        const u = segBox(bl0, bl1, [-5, 0, -1.1, 5, 1.3, 1.1]);
-        if (u !== null && (!best || u < best.u)) best = { u, t, berm: true };
-      }
+      const l0 = localOf(t.pos, t.yaw, sh.prev), l1 = localOf(t.pos, t.yaw, p);
+      t.boxes.forEach((b, bi) => { if (t.perBox && !t.boxAlive[bi]) return; const u = segBox(l0, l1, b); if (u !== null && (!best || u < best.u)) best = { u, t, bi }; });
+      if (t.berm) { const u = segBox(localOf(t.berm.position, t.bermYaw, sh.prev), localOf(t.berm.position, t.bermYaw, p), [-6.5, 0, -2.2, 6.5, 1.35, 2.2]); if (u !== null && (!best || u < best.u)) best = { u, t, berm: true }; }
     }
-    // ground
-    const gh = groundH(p.x, p.z);
-    let gu = null; if (p.y <= gh) { const g0 = sh.prev.y - groundH(sh.prev.x, sh.prev.z); gu = g0 / (g0 - (p.y - gh)); }
-    if (best && (gu === null || best.u <= gu)) {
-      const hp = sh.prev.clone().lerp(p, best.u);
-      finishShell(sh, hp, best.berm ? null : best.t, best); removeShell(i); continue;
-    }
-    if (gu !== null) { const hp = sh.prev.clone().lerp(p, Math.max(0, Math.min(1, gu))); finishShell(sh, hp, null); removeShell(i); continue; }
+    const gh = groundH(p.x, p.z); let gu = null;
+    if (p.y <= gh) { const g0 = sh.prev.y - groundH(sh.prev.x, sh.prev.z); gu = g0 / (g0 - (p.y - gh)); }
+    if (best && (gu === null || best.u <= gu)) { finishShell(sh, sh.prev.clone().lerp(p, best.u), best.berm ? null : best.t, best); removeShell(i); continue; }
+    if (gu !== null) { finishShell(sh, sh.prev.clone().lerp(p, Math.max(0, Math.min(1, gu))), null); removeShell(i); continue; }
     sh.s = s; sh.prev.copy(p); sh.sp.position.copy(p);
   }
 }
-function bermLocal(t, p) { const v = p.clone().sub(t.berm.position); const a = t.bermYaw, c = Math.cos(-a), s = Math.sin(-a); return new THREE.Vector3(v.x * c + v.z * s, v.y, -v.x * s + v.z * c); }
 function removeShell(i) { const sh = shells[i]; scene.remove(sh.sp); sh.sp.material.dispose(); shells.splice(i, 1); }
 function angOf(p) { const v = p.clone().sub(MUZZLE); return { az: Math.atan2(v.x, -v.z), el: Math.atan2(v.y, Math.hypot(v.x, v.z)) }; }
+// angular extent of a target as seen from the gun
+function extent(t) {
+  let a0 = 1e9, a1 = -1e9, e0 = 1e9, e1 = -1e9;
+  const c = Math.cos(t.yaw), s = Math.sin(t.yaw);
+  for (const b of t.boxes) for (const x of [b[0], b[3]]) for (const y of [b[1], b[4]]) for (const z of [b[2], b[5]]) {
+    const w = new THREE.Vector3(t.pos.x + x * c - z * s, y, t.pos.z + x * s + z * c), a = angOf(w);
+    a0 = Math.min(a0, a.az); a1 = Math.max(a1, a.az); e0 = Math.min(e0, a.el); e1 = Math.max(e1, a.el);
+  }
+  return { a0, a1, e0, e1 };
+}
+function missWords(hp, t, ground) {
+  const a = angOf(hp), ex = extent(t), parts = [];
+  if (ground) { const d = Math.hypot(hp.x, hp.z), R = trueRange(t); if (d < R - 4) parts.push('low (short)'); else if (d > R + 4) parts.push('high (over)'); }
+  else if (a.el > ex.e1) parts.push('high'); else if (a.el < ex.e0) parts.push('low');
+  if (a.az < ex.a0) parts.push('left'); else if (a.az > ex.a1) parts.push('right');
+  return parts.length ? parts.join(', ') : 'just off the target';
+}
 
 function finishShell(sh, hp, hitT, info) {
   const main = sh.round !== 'COAX';
-  let result = 'lost', near = null, off = null;
+  let result = 'lost', near = null, off = null, words = 'Round lost: no impact seen';
   if (hp) {
-    // attribute to the nearest target in angle
     const ai = angOf(hp); let bd = 1e9;
-    for (const t of targets) {
-      const c = t.pos.clone(); c.y = t.h / 2; const at_ = angOf(c);
-      const d = Math.hypot(ai.az - at_.az, ai.el - at_.el) * 1000;
-      if (d < bd) { bd = d; near = t; off = { x: (ai.az - at_.az) * 1000, y: (ai.el - at_.el) * 1000 }; }
-    }
-    if (bd > 15) { near = null; }
+    for (const t of targets) { const c = t.pos.clone(); c.y = t.h / 2; const at_ = angOf(c), d = Math.hypot(ai.az - at_.az, ai.el - at_.el) * 1000; if (d < bd) { bd = d; near = t; } }
+    if (bd > 15) near = null;
+    if (hitT) near = hitT;
+    if (near) { const c = near.pos.clone(); c.y = near.h / 2; const at_ = angOf(c); off = { x: (ai.az - at_.az) * 1000, y: (ai.el - at_.el) * 1000 }; }
     if (hitT) {
-      result = 'HIT';
-      near = hitT; const c = hitT.pos.clone(); c.y = hitT.h / 2; const at_ = angOf(c);
-      off = { x: (ai.az - at_.az) * 1000, y: (ai.el - at_.el) * 1000 };
-      applyHit(hitT, sh.round, info, hp);
+      result = 'HIT'; words = 'HIT';
+      const wasAlive = hitT.alive; applyHit(hitT, sh.round, info, hp);
+      if (wasAlive && !hitT.alive) result = 'KILL';
     } else {
       result = info && info.berm ? 'berm' : 'ground';
-      if (main && sh.round === 'HESH') splash(hp);
+      words = near ? 'MISS: ' + (info && info.berm ? 'low, into the cover in front' : missWords(hp, near, true)) : 'MISS: no target near the impact';
+      if (sh.round === 'HESH') splash(hp);
     }
-    // impact effects
-    if (hitT && main) { puff(hp, TEX.flash, 3, 9, 0.35, { add: true }); puff(hp, TEX.smoke, 3, 12, 3, { rise: 1.5, alpha: 0.8 }); }
+    if (hitT && main) { puff(hp, TEX.flash, 3, 9, 0.35, { add: true }); }
     else if (main) { puff(hp, TEX.dust, sh.round === 'HESH' ? 4 : 2.5, sh.round === 'HESH' ? 16 : 9, 2.6, { rise: 1.2, alpha: 0.9 }); if (sh.round === 'HESH') puff(hp, TEX.flash, 2, 6, 0.25, { add: true }); }
     else puff(hp, TEX.dust, 0.5, 1.6, 0.8, { alpha: 0.8 });
   }
-  const R = near ? trueRange(near) : (hp ? Math.hypot(hp.x, hp.z) : null);
-  const rec = { n: sh.id, time: sh.firedAt, round: sh.round, mode: sh.mode, target: near ? near.label : '—', range: R,
-    est: sh.estimate, result, dx: off ? off.x : null, dy: off ? off.y : null, tof: sh.t };
+  const rec = { n: sh.id, time: sh.firedAt, round: sh.round, mode: sh.mode, target: near ? near.label : '—', range: near ? trueRange(near) : null,
+    est: sh.estimate, result, dx: off ? off.x : null, dy: off ? off.y : null, tof: sh.t, words };
   shotLog.push(rec);
   if (near) engage(near, sh, result);
-  showLastShot(rec);
+  showFeedback(rec, main);
 }
 function splash(hp) {
   for (const t of targets) if (t.kind === 'infantry' && t.alive) t.boxes.forEach((b, bi) => {
-    if (!t.boxAlive[bi]) return; const c = new THREE.Vector3((b[0] + b[3]) / 2, 0, (b[2] + b[5]) / 2);
-    const w = t.obj.localToWorld(c.clone()); if (w.distanceTo(hp) < 9) killBox(t, bi);
+    if (!t.boxAlive[bi]) return; const w = t.obj.localToWorld(new THREE.Vector3((b[0] + b[3]) / 2, 0, (b[2] + b[5]) / 2));
+    if (w.distanceTo(hp) < 9) killBox(t, bi);
   });
 }
-function killBox(t, bi) { t.boxAlive[bi] = false; const m = t.obj.children[bi]; m.rotation.z = Math.PI / 2; m.position.y = 0.25; if (t.boxAlive.every(a => !a)) t.alive = false; }
+function killBox(t, bi) { t.boxAlive[bi] = false; const f = t.obj.children[bi]; f.rotation.x = Math.PI / 2; f.position.y = 0.2; if (t.boxAlive.every(a => !a)) { t.alive = false; t.killedAt = S.time; } }
 function applyHit(t, round, info, hp) {
   t.hits++;
   if (t.kind === 'infantry') { killBox(t, info.bi); return; }
   if (round === 'COAX') { puff(hp, TEX.flash, 0.3, 0.8, 0.12, { add: true }); if (t.kind === 'truck' && t.hits >= 6) kill(t); return; }
   kill(t);
 }
-function kill(t) { if (!t.alive) return; t.alive = false; t.speed = 0; t.obj.traverse(o => { if (o.isMesh && o.material !== MAT.shadow) o.material = MAT.dead; }); }
+function kill(t) {
+  if (!t.alive) return;
+  t.alive = false; t.speed = 0; t.killedAt = S.time;
+  t.obj.traverse(o => { if (o.isMesh && !o.userData.noDead) o.material = MAT.dead; });
+  if (t.turret) { t.turret.rotation.set(0.18, 0.5, 0.12); t.turret.position.set(0.4, 0.25, 0.3); }
+  const p = t.pos.clone(); p.y = t.h * 0.7;
+  puff(p, TEX.flash, 6, 22, 0.6, { add: true }); puff(p, TEX.flame, 5, 14, 1.4, { add: true, rise: 4 });
+  for (let i = 0; i < 6; i++) puff(p.clone().add(new THREE.Vector3((Math.random() - .5) * 6, Math.random() * 3, (Math.random() - .5) * 6)), TEX.smoke, 4, 16, 4 + Math.random() * 3, { rise: 5, alpha: 0.9 });
+}
 
-// ---------------------------------------------------------------- engagements (GAS-13)
+// ---------------------------------------------------------------- feedback
+let calloutTimer = null;
+function callout(main, cls, destroyed) {
+  const m = document.getElementById('calloutMain'); m.textContent = main; m.className = 'main ' + cls;
+  document.getElementById('calloutKill').style.display = destroyed ? 'inline-block' : 'none';
+  const c = document.getElementById('callout'); c.classList.add('show');
+  clearTimeout(calloutTimer); calloutTimer = setTimeout(() => c.classList.remove('show'), destroyed ? 3200 : 2200);
+}
+function showFeedback(r, main) {
+  const hit = r.result === 'HIT' || r.result === 'KILL', destroyed = r.result === 'KILL';
+  const head = destroyed ? 'HIT · TARGET DESTROYED' : r.words;
+  document.getElementById('feedback').innerHTML =
+    `<span class="${hit ? 'hit' : 'miss'}">${head}</span><small>${r.round}${r.target !== '—' ? ' · ' + r.target + ' at ' + fmt(r.range) + ' m' : ''}${hit ? '' : missAdvice(r)}</small>`;
+  if (main || destroyed || (hit && r.round === 'COAX' && Math.random() < 0.25)) callout(hit ? 'HIT' : r.words.replace('MISS: ', 'MISS · ').toUpperCase(), hit ? 'hit' : 'miss', destroyed);
+}
+function missAdvice(r) {
+  if (!r.words.startsWith('MISS:') || r.target === '—') return '';
+  const w = r.words, fixes = [];
+  if (w.includes('high')) fixes.push('lower'); if (w.includes('low')) fixes.push('higher');
+  if (w.includes('left')) fixes.push('further right'); if (w.includes('right')) fixes.push('further left');
+  return fixes.length ? ` · next round: put the strike ${fixes.join(' and ')}. Check your range.` : '';
+}
+
+// ---------------------------------------------------------------- engagements (instructor)
 const engagements = [];
 function engage(t, sh, result) {
-  if (!t.eng) {
-    t.eng = { n: engagements.length + 1, target: t.label, kind: t.kind, range: trueRange(t), est: sh.estimate, rounds: 0,
-      first: sh.firedAt - t.born, hit: null, ammo: new Set(), moving: !!t.speed };
-    engagements.push(t.eng);
-  }
-  const e = t.eng; e.rounds++; e.ammo.add(sh.round); e.range = trueRange(t);
-  if (e.est === null && sh.estimate) e.est = sh.estimate;
-  if (result === 'HIT' && e.hit === null) e.hit = S.time - t.born;
+  if (!t.eng) { t.eng = { n: engagements.length + 1, target: t.label, range: trueRange(t), est: sh.estimate, rounds: 0, first: sh.firedAt - t.born, hit: null, moving: !!t.speed }; engagements.push(t.eng); }
+  const e = t.eng; e.rounds++; e.range = trueRange(t); if (e.est === null && sh.estimate) e.est = sh.estimate;
+  if ((result === 'HIT' || result === 'KILL') && e.hit === null) e.hit = S.time - t.born;
   renderEng();
-  if (result === 'HIT' && (scenario === 'stationary' || scenario === 'moving') && !t.alive) {
-    setPrompt(`Target destroyed in ${e.rounds} round${e.rounds > 1 ? 's' : ''} · ${e.hit.toFixed(1)} s. Next target in 3 s.`);
-    clearTimeout(nextTimer); nextTimer = setTimeout(nextTarget, 3000);
+  if (result === 'KILL' && (scenario === 'stationary' || scenario === 'moving')) {
+    setPrompt(`Target destroyed with ${e.rounds} round${e.rounds > 1 ? 's' : ''} in ${fmt(e.hit, 1)} s. Next target in 4 s.`);
+    clearTimeout(nextTimer); nextTimer = setTimeout(nextTarget, 4000);
   }
 }
 let nextTimer = null;
 const fmt = (v, d = 0) => v === null || v === undefined || !isFinite(v) ? '—' : v.toLocaleString('en-GB', { minimumFractionDigits: d, maximumFractionDigits: d });
 function renderEng() {
-  const tb = document.querySelector('#engTbl tbody');
-  tb.innerHTML = engagements.slice().reverse().map(e => `<tr><td>${e.n}</td><td>${e.target}${e.moving ? ' ↔' : ''}</td><td>${fmt(e.range)}</td><td>${fmt(e.est)}</td><td>${e.rounds}</td><td>${fmt(e.first, 1)}</td><td class="${e.hit !== null ? 'pass' : ''}">${fmt(e.hit, 1)}</td></tr>`).join('') ||
+  document.querySelector('#engTbl tbody').innerHTML = engagements.slice().reverse().map(e => `<tr><td>${e.n}</td><td>${e.target}${e.moving ? ' ↔' : ''}</td><td>${fmt(e.range)}</td><td>${fmt(e.est)}</td><td>${e.rounds}</td><td>${fmt(e.first, 1)}</td><td class="${e.hit !== null ? 'pass' : ''}">${fmt(e.hit, 1)}</td></tr>`).join('') ||
     '<tr><td colspan="7" style="text-align:left;color:var(--muted)">No engagements yet.</td></tr>';
-}
-function showLastShot(r) {
-  const cls = r.result === 'HIT' ? 'hit' : 'miss';
-  const dir = r.dx === null ? '' : ` · impact ${fmt(Math.abs(r.dx), 2)} ${r.dx >= 0 ? 'R' : 'L'} / ${fmt(Math.abs(r.dy), 2)} ${r.dy >= 0 ? 'high' : 'low'} mrad`;
-  document.getElementById('lastShot').innerHTML =
-    `Rd ${r.n} · ${r.round} → <span class="${cls}">${r.result.toUpperCase()}</span> ${r.target !== '—' ? r.target + ' at ' + fmt(r.range) + ' m' : ''}${dir}<br>TOF ${fmt(r.tof, 2)} s · ballistics ${r.mode === 'model' ? 'physics model' : 'reticle-ideal'}`;
 }
 
 // ---------------------------------------------------------------- scenarios
 let scenario = 'range';
 function setPrompt(t) { document.getElementById('prompt').innerHTML = t; }
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const jit = (v, j) => Math.round(v + (Math.random() - 0.5) * 2 * j);
 function nextTarget() {
   clearTimeout(nextTimer); clearTargets();
-  const rnd = (a, b) => a + Math.random() * (b - a);
-  const azNow = S.az * 180 / Math.PI;
+  const azNow = S.az * 180 / Math.PI, r = (a, b) => a + Math.random() * (b - a);
   if (scenario === 'range') {
-    const L = [['tank', 620, -9], ['tank', 1010, 4], ['tank', 1390, -3], ['tank', 1820, 8], ['tank', 2210, -6], ['tank', 2600, 1.5], ['tank', 3050, -1],
-      ['truck', 450, 11], ['truck', 840, -13], ['infantry', 320, -4.5], ['infantry', 690, 6.5], ['infantry', 1150, -11]];
-    for (const [k, r, a] of L) addTarget(k, r, a);
-    addTarget('tank', 1620, 12.5, { hullDown: true, yaw: 12.5 * Math.PI / 180 });
-    addTarget('tank', 1250, -1, { speed: 25 / 3.6, travel: 180 });
-    setPrompt('Free range: 7 exposed tanks 620–3,050 m, 1 hull-down, 1 crossing at 25 km/h, 2 trucks and 3 infantry groups for the coax. Slew with Ctrl+arrows to find them.');
+    const L = [['tank', 300, -6], ['tank', 600, 5], ['tank', 800, -12, { netted: true }], ['tank', 1000, 9], ['tank', 1300, -3], ['tank', 1650, 2.5, { netted: true }],
+      ['tank', 2000, -8], ['tank', 2400, 6.5], ['tank', 2900, -1.5],
+      ['truck', 450, 13], ['truck', 1100, -14.5], ['infantry', 250, -2.5], ['infantry', 550, 11], ['infantry', 900, -9.5]];
+    for (const [k, R, a, o] of L) addTarget(k, R, a, o);
+    addTarget('tank', 1500, 12.5, { hullDown: true, yaw: 12.5 * Math.PI / 180 });
+    addTarget('tank', 700, -0.8, { speed: 20 / 3.6, travel: 120 });
+    setPrompt('Free range: 11 tanks from 300 to 2,900 m (two under camouflage nets, one hull-down, one crossing at 20 km/h), plus trucks and infantry for the coax. Ctrl+arrows to slew fast.');
   } else if (scenario === 'estimate') {
-    const R = Math.round(rnd(600, 2000)); addTarget('tank', R, azNow + rnd(-1.5, 1.5), { yaw: rnd(-1.4, 1.4) });
-    setPrompt('Fit the tank in the range estimator: tank bottom on the long line, turret top on a dash. Enter your estimate and press Check.');
+    addTarget('tank', jit(pick([600, 700, 800, 1000, 1200, 1400, 1600, 1800, 2000]), 60), azNow + r(-1.5, 1.5), { yaw: r(-1.4, 1.4) });
+    setPrompt('Tank bottom on the long line, turret top on a dash: the number above the dash is the range in hundreds of metres. Enter your estimate and press Check.');
   } else if (scenario === 'stationary') {
-    const R = Math.round(rnd(400, 3200)); addTarget('tank', R, azNow + rnd(-2, 2));
-    setPrompt('Stationary tank. Estimate range, pick the ammunition scale, lay the mark on the target centre and fire. The engagement clock is running.');
+    addTarget('tank', jit(pick([300, 400, 500, 600, 700, 800, 1000, 1200, 1400, 1600, 1800, 2000, 2300, 2600, 3000]), 40), azNow + r(-2, 2), { netted: Math.random() < 0.3 });
+    setPrompt('Stationary tank. Estimate the range, pick the scale for your ammunition, lay that mark on the centre of the target and fire.');
   } else {
-    const R = Math.round(rnd(600, 2000)), v = Math.round(rnd(15, 40));
-    const t = addTarget('tank', R, azNow + rnd(-1.5, 1.5), { speed: v / 3.6, travel: 250 }); t.dir = Math.random() < 0.5 ? 1 : -1;
-    setPrompt(`Crossing tank at ${v} km/h. Lay a lead mark behind the centre on the target and fire. Lead-mark speeds are an open question (gap 5): the explain card shows the speed each mark implies in the current model.`);
+    const v = Math.round(r(10, 35));
+    const t = addTarget('tank', jit(pick([300, 500, 700, 900, 1200, 1500, 1800]), 40), azNow + r(-1.5, 1.5), { speed: v / 3.6, travel: 220 }); t.dir = Math.random() < 0.5 ? 1 : -1;
+    setPrompt('Crossing tank. Lay a lead mark on the target: a mark behind the centre, further out for a faster target. Keep tracking as you fire.');
   }
 }
 document.getElementById('btnCheck').onclick = () => {
   const est = parseFloat(document.getElementById('estimate').value);
   if (!isFinite(est)) { setPrompt('Type a range in metres first, for example 1200.'); return; }
-  const t = targets.find(t => t.kind === 'tank' && t.alive) || targets[0]; if (!t) return;
-  // nearest target to bore
-  let best = t, bd = 1e9; for (const x of targets) { const c = x.pos.clone(); c.y = 1; const a = angOf(c); const d = Math.hypot(a.az - S.az, a.el - (S.el - 0.03)); if (d < bd) { bd = d; best = x; } }
-  const R = trueRange(best), err = (est - R) / R * 100;
-  const verdict = Math.abs(err) <= 10 ? '<span style="color:var(--ok)">within 10%</span>' : '<span style="color:var(--bad)">outside 10%</span>';
-  setPrompt(`${best.label}: true range ${fmt(R)} m, your estimate ${fmt(est)} m, error ${err >= 0 ? '+' : ''}${fmt(err, 1)}% (${verdict}). Standard is TBD by the customer (spec §8.1 T2).`);
-  engagements.push({ n: engagements.length + 1, target: best.label + ' (est.)', range: R, est, rounds: 0, first: null, hit: null });
-  renderEng();
-  if (scenario === 'estimate') { clearTimeout(nextTimer); nextTimer = setTimeout(nextTarget, 3500); }
+  let best = null, bd = 1e9;
+  for (const x of targets) { const c = x.pos.clone(); c.y = 1; const a = angOf(c), d = Math.hypot(a.az - S.az, a.el - (S.el - 0.035)); if (d < bd) { bd = d; best = x; } }
+  if (!best) return;
+  const R = trueRange(best), err = (est - R) / R * 100, good = Math.abs(err) <= 10;
+  setPrompt(`${best.label}: true range ${fmt(R)} m. Your estimate ${fmt(est)} m is ${fmt(Math.abs(err), 0)}% ${err >= 0 ? 'long' : 'short'}${good ? ': <b style="color:var(--ok)">good estimate</b>.' : ': <b style="color:var(--bad)">re-check the fit</b>.'}`);
+  engagements.push({ n: engagements.length + 1, target: best.label + ' (estimate)', range: R, est, rounds: 0, first: null, hit: null }); renderEng();
+  if (scenario === 'estimate') { clearTimeout(nextTimer); nextTimer = setTimeout(nextTarget, 4000); }
 };
 
 // ---------------------------------------------------------------- view mapping
 let SZ = 600, DPR = 1;
-function viewParams() {
-  if (S.zoom) return { cx: S.zoomC.x, cy: S.zoomC.y, r: 15 };
-  return VIEW;
-}
+const viewParams = () => S.zoom ? { cx: S.zoomC.x, cy: S.zoomC.y, r: 17 } : VIEW;
 function mapper() {
-  const v = viewParams();
-  const u0 = Math.tan((v.cx - v.r) / 1000), u1 = Math.tan((v.cx + v.r) / 1000);
-  const v0 = Math.tan((v.cy - v.r) / 1000), v1 = Math.tan((v.cy + v.r) / 1000);
-  return {
-    v, u0, u1, v0, v1,
-    px: x => (Math.tan(x / 1000) - u0) / (u1 - u0) * SZ,
-    py: y => (Math.tan(y / 1000) - v0) / (v1 - v0) * SZ,
-    ppm: SZ / (2 * v.r),
-    inv: (sx, sy) => ({ x: 1000 * Math.atan(u0 + sx / SZ * (u1 - u0)), y: 1000 * Math.atan(v0 + sy / SZ * (v1 - v0)) })
-  };
+  const v = viewParams(), u0 = Math.tan((v.cx - v.r) / 1000), u1 = Math.tan((v.cx + v.r) / 1000), v0 = Math.tan((v.cy - v.r) / 1000), v1 = Math.tan((v.cy + v.r) / 1000);
+  return { v, u0, u1, v0, v1, ppm: SZ / (2 * v.r),
+    px: x => (Math.tan(x / 1000) - u0) / (u1 - u0) * SZ, py: y => (Math.tan(y / 1000) - v0) / (v1 - v0) * SZ,
+    inv: (sx, sy) => ({ x: 1000 * Math.atan(u0 + sx / SZ * (u1 - u0)), y: 1000 * Math.atan(v0 + sy / SZ * (v1 - v0)) }) };
 }
 function setProjection(M) {
   const n = camera.near;
@@ -1149,129 +1222,93 @@ function setProjection(M) {
   camera.projectionMatrixInverse.copy(camera.projectionMatrix).invert();
 }
 function resize() {
-  const wrap = document.getElementById('sightWrap');
-  const w = wrap.clientWidth, h = window.innerWidth <= 900 ? w : wrap.clientHeight;
-  SZ = Math.max(240, Math.floor(Math.min(w, h)));
+  const wrap = document.getElementById('sightWrap'), phone = window.innerWidth <= 900;
+  const w = wrap.clientWidth, h = phone ? window.innerHeight - 132 - 70 : wrap.clientHeight;
+  SZ = Math.max(220, Math.floor(Math.min(w, h)));
   sightEl.style.width = SZ + 'px'; sightEl.style.height = SZ + 'px';
   DPR = Math.min(2, window.devicePixelRatio || 1);
-  renderer.setSize(SZ, SZ, false);
-  ov.width = SZ * DPR; ov.height = SZ * DPR;
+  renderer.setSize(SZ, SZ, false); ov.width = SZ * DPR; ov.height = SZ * DPR;
 }
 window.addEventListener('resize', resize);
+function toReticle(p) { const v = p.clone().applyMatrix4(camera.matrixWorldInverse); if (v.z >= 0) return null; return { x: 1000 * Math.atan(v.x / -v.z), y: 1000 * Math.atan(-v.y / -v.z) }; }
 
-// world point → reticle mrad (sight frame)
-function toReticle(p) {
-  const v = p.clone().applyMatrix4(camera.matrixWorldInverse);
-  if (v.z >= 0) return null;
-  return { x: 1000 * Math.atan(v.x / -v.z), y: 1000 * Math.atan(-v.y / -v.z) };
-}
-
-// ---------------------------------------------------------------- explain content (Figure 2)
+// ---------------------------------------------------------------- explain mode (Figure 2)
+const K = 1 / 0.8446;   // badge positions follow the booklet scale
 const LAYERS = {
-  Zero:   { key: 'O', name: 'Reference circle (zero)', color: '--c-zero', badge: [1.7, -1.7] },
-  Stadia: { key: 'R', name: 'Range estimator', color: '--c-stadia', badge: [16.6, 0.0] },
-  FIN:    { key: 'F', name: 'Round 1 · FIN (KE)', color: '--c-fin', badge: [-3.4, 2.4] },
-  HESH:   { key: 'H', name: 'Round 2 · HESH', color: '--c-hesh', badge: [3.0, 24.0] },
-  Coax:   { key: 'C', name: 'Coax range scale', color: '--c-coax', badge: [-17.3, 51.0] },
-  Lead:   { key: 'L', name: 'Lead marks', color: '--c-lead', badge: [-10.0, 47.0] },
-  Unknown:{ key: '?', name: 'Bottom cross', color: '--c-unk', badge: [1.6, 68.0] }
+  Zero:    { key: 'O', name: 'Reference circle (zero)', color: '--c-zero', badge: [1.9, -2.0] },
+  Stadia:  { key: 'R', name: 'Range estimator', color: '--c-stadia', badge: [19.7, 0.0] },
+  FIN:     { key: 'F', name: 'Round 1 · FIN (KE)', color: '--c-fin', badge: [-4.0, 2.9] },
+  HESH:    { key: 'H', name: 'Round 2 · HESH', color: '--c-hesh', badge: [3.6, 28.4] },
+  Coax:    { key: 'C', name: 'Coax range scale', color: '--c-coax', badge: [-20.5, 60.4] },
+  Lead:    { key: 'L', name: 'Lead marks', color: '--c-lead', badge: [-11.8, 55.6] },
+  Unknown: { key: '?', name: 'Bottom cross', color: '--c-unk', badge: [1.9, 80.5] }
 };
+const INK = { Zero: '#111111', Stadia: '#6d2fb8', FIN: '#1f4fb0', HESH: '#bf520c', Coax: '#08795a', Lead: '#4a5260', Unknown: '#c42a18' };
 const LAYER_TEXT = {
-  Zero: 'The zero point every mark is measured from. Assumed gun zero, to confirm with the customer (gap 3).',
+  Zero: 'The zero point every mark is measured from.',
   Stadia: 'Tank bottom on the long line, turret top on a dash. The number above = range in 100s of m. Example: turret meets the "12" dash → 1,200 m.',
   FIN: 'Small cluster just below the top circle. Aim points 800–2,400 m. Numbers = 100s of m. A pair of dashes: aim at the gap centre.',
   HESH: 'Centre column of circles (O) and crosses (+), 400–3,200 m. The side numbers give the range of each cross. Stationary target: put it on the centre column at its range row. The column bends right with range (drift correction).',
   Coax: 'Range lines for the coaxial machine gun, 200–1,800 m. Aim with the centre column at the height of the line for your range.',
   Lead: 'Dashes and ticks either side of each row. Moving target: aim ahead of it. Put the target on a mark behind the centre, further out for a faster target.',
-  Unknown: 'Purpose unknown. Open customer question (gap 8).'
+  Unknown: 'Purpose unknown.'
 };
-const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-const INK = { Zero: '#111111', Stadia: '#6d2fb8', FIN: '#1f4fb0', HESH: '#bf520c', Coax: '#08795a', Lead: '#4a5260', Unknown: '#c42a18' };
-
-function primCenter(p) {
-  if (p.prim === 'line') return { x: (p.x1 + p.x2) / 2, y: (p.y1 + p.y2) / 2 };
-  if (p.prim === 'textbox') return { x: (p.x1 + p.x2) / 2, y: (p.y1 + p.y2) / 2 };
-  return { x: p.x1, y: p.y1 };
-}
+function primCenter(p) { return p.prim === 'line' || p.prim === 'textbox' ? { x: (p.x1 + p.x2) / 2, y: (p.y1 + p.y2) / 2 } : { x: p.x1, y: p.y1 }; }
 function primDist(p, x, y) {
-  if (p.prim === 'line') {
-    const dx = p.x2 - p.x1, dy = p.y2 - p.y1, L = dx * dx + dy * dy;
-    const u = L ? Math.max(0, Math.min(1, ((x - p.x1) * dx + (y - p.y1) * dy) / L)) : 0;
-    return Math.hypot(x - (p.x1 + u * dx), y - (p.y1 + u * dy));
-  }
+  if (p.prim === 'line') { const dx = p.x2 - p.x1, dy = p.y2 - p.y1, L = dx * dx + dy * dy, u = L ? Math.max(0, Math.min(1, ((x - p.x1) * dx + (y - p.y1) * dy) / L)) : 0; return Math.hypot(x - (p.x1 + u * dx), y - (p.y1 + u * dy)); }
   if (p.prim === 'circle') return Math.max(0, Math.hypot(x - p.x1, y - p.y1) - p.r);
   if (p.prim === 'dot') return Math.hypot(x - p.x1, y - p.y1);
-  const cx = Math.max(p.x1, Math.min(p.x2, x)), cy = Math.max(p.y1, Math.min(p.y2, y));
-  return Math.hypot(x - cx, y - cy);
+  return Math.hypot(x - Math.max(p.x1, Math.min(p.x2, x)), y - Math.max(p.y1, Math.min(p.y2, y)));
 }
 function markCluster(p) {
   const c = primCenter(p);
-  return PRIMS.filter(q => q.layer === p.layer && q.item === p.item && q.range === p.range && q.side === p.side &&
-    Math.hypot(primCenter(q).x - c.x, primCenter(q).y - c.y) < (p.layer === 'Lead' ? 1.3 : 3));
+  return PRIMS.filter(q => q.layer === p.layer && q.item === p.item && q.range === p.range && q.side === p.side && Math.hypot(primCenter(q).x - c.x, primCenter(q).y - c.y) < (p.layer === 'Lead' ? 1.5 : 3.5));
 }
-function hesColX(R) { return interpRet(RET.HESH, R, 'x'); }
 function describe(p) {
-  const L = LAYERS[p.layer], facts = [];
-  let title = L.name, body = LAYER_TEXT[p.layer];
-  const R = p.range;
-  const c = primCenter(p);
-  if (p.layer === 'Stadia' && p.item === 'range dash') {
-    const gap = Math.abs(p.y1 - (-0.03));
-    facts.push(`Dash for ${fmt(R)} m · gap to base line ${fmt(gap, 2)} mrad`);
-    facts.push(`A ${TANK_H.toFixed(2)} m target at ${fmt(R)} m spans ${fmt(TANK_H / R * 1000, 2)} mrad`);
-    facts.push(`Implied reference height ${fmt(gap * R / 1000, 2)} m (gap 1)`);
-  } else if (p.layer === 'Stadia') {
-    facts.push('Base line: put the bottom of the tank here');
-  }
+  const L = LAYERS[p.layer], R = p.range, use = [], tech = [];
+  let title = L.name;
+  const c = primCenter(p), rnd = p.layer === 'Coax' ? 'COAX' : p.layer;
+  if (p.layer === 'Stadia' && p.item === 'range dash') { title += ` · ${fmt(R)} m dash`; use.push(`Turret top on this dash with the tank bottom on the long line → the target is at ${fmt(R)} m.`); }
+  else if (p.layer === 'Stadia' && p.item === 'base line') use.push('Put the bottom of the tank on this line.');
+  else if (p.layer === 'Stadia') use.push(`Number ${p.text} = ${fmt(R)} m.`);
   if ((p.layer === 'FIN' || p.layer === 'HESH' || p.layer === 'Coax') && (p.item === 'aim point' || p.item === 'range line') && R) {
-    const r = p.layer === 'Coax' ? 'COAX' : p.layer, row = RET[r].find(a => a.R === R);
-    const my = modelY(r, R);
     title += ` · ${fmt(R)} m`;
-    facts.push(`Aim point (${fmt(row.x, 2)}, ${fmt(row.y, 2)}) mrad`);
-    facts.push(`Model elevation ${fmt(my, 2)} mrad · miss ${fmt(my - row.y, 2)} mrad = ${fmt((my - row.y) * R / 1000, 2)} m at target`);
-    facts.push(`Time of flight ${fmt(tof(r, R), 2)} s`);
-    if (p.layer === 'HESH') {
-      const shape = PRIMS.some(q => q.layer === 'HESH' && q.range === R && q.prim === 'circle') ? 'Circle: odd hundreds, range inferred' : 'Cross: even hundreds, range printed at the sides';
-      facts.unshift(shape);
-      facts.push(`Lateral offset ${fmt(row.x, 2)} mrad R = drift correction (gap 7)`);
-    }
-    if (p.layer === 'FIN') facts.unshift(PRIMS.filter(q => q.layer === 'FIN' && q.item === 'aim point' && q.range === R).length === 2 ? 'Pair of dashes: aim at the gap centre' : 'Single centre dash');
+    if (p.layer === 'Coax') use.push(`Target at ${fmt(R)} m: put it on the centre column at the height of this line, then fire the coax.`);
+    else use.push(`Target at ${fmt(R)} m with ${p.layer}: lay this mark on the centre of the target and fire.`);
+    if (p.layer === 'HESH') use.push(PRIMS.some(q => q.layer === 'HESH' && q.range === R && q.prim === 'circle') ? 'Circle: the odd hundreds between the numbered crosses.' : 'Cross: even hundreds, numbered at the sides.');
+    if (p.layer === 'FIN' && PRIMS.filter(q => q.layer === 'FIN' && q.item === 'aim point' && q.range === R).length === 2) use.push('Pair of dashes: aim at the gap centre.');
+    const row = RET[rnd].find(a => a.R === R), my = modelY(rnd, R);
+    tech.push(`Aim point (${fmt(row.x, 2)}, ${fmt(row.y, 2)}) mrad · model needs ${fmt(my, 2)} · Δ ${fmt(my - row.y, 2)} mrad · TOF ${fmt(tof(rnd, R), 2)} s`);
   }
-  if (p.item === 'line dot') {
-    title += ' · line dot';
-    facts.push(p.layer === 'FIN' ? `Midway dot, range ${R ? '~' + fmt(R) + ' m (inferred)' : 'unknown'}` : 'Dot on the column line between aim points. Meaning unknown (gap 4)');
-  }
+  if (p.layer === 'FIN' && p.prim === 'textbox') use.push(`Number ${p.text} = ${fmt(R)} m.`);
+  if (p.layer === 'Coax' && p.prim === 'textbox') use.push(p.text === 'COAX' ? 'Title of the coax scale.' : `Number ${p.text} = ${fmt(R)} m.`);
+  if (p.layer === 'HESH' && p.prim === 'textbox') use.push(`Number ${p.text} = ${fmt(R)} m: the cross on this row.`);
+  if (p.item === 'line dot') use.push(p.layer === 'FIN' ? 'Dot midway between two FIN aim points.' : 'Dot on the column between aim points.');
   if (p.layer === 'Lead') {
     const isFin = p.item.startsWith('FIN'), r = isFin ? 'FIN' : 'HESH';
+    title += ` · ${r} ${fmt(R)} m row`;
+    use.push(`Moving target at about ${fmt(R)} m (${r}): lay this mark on the target. A mark further out is for a faster target.`);
     let mx = c.x;
-    const vert = p.prim === 'line' && Math.abs(p.x1 - p.x2) < 0.01 ? p : PRIMS.find(q => q.layer === 'Lead' && q.range === R && q.side === p.side && q.item === p.item && q.prim === 'line' && Math.abs(q.x1 - q.x2) < 0.01 && Math.abs(q.x1 - c.x) < 0.9);
+    const vert = p.prim === 'line' && Math.abs(p.x1 - p.x2) < 0.01 ? p : PRIMS.find(q => q.layer === 'Lead' && q.range === R && q.side === p.side && q.item === p.item && q.prim === 'line' && Math.abs(q.x1 - q.x2) < 0.01 && Math.abs(q.x1 - c.x) < 1.0);
     if (vert) mx = vert.x1;
-    const col = isFin ? 0.03 : hesColX(R);
-    const lead = Math.abs(mx - col), t = tof(r, R), v = lead / 1000 * R / t * 3.6;
-    title += ` · ${isFin ? 'FIN' : 'HESH'} ${fmt(R)} m row`;
-    facts.push(`Mark ${p.item.replace('tick ', '')} at x ${fmt(mx, 2)} · ${fmt(lead, 2)} mrad from the column`);
-    facts.push(`Implied crossing speed ≈ ${fmt(v, 0)} km/h (model TOF ${fmt(t, 2)} s)`);
-    facts.push('Assumption: the real speed per mark is open (gap 5)');
+    const col = isFin ? FIN_X : interpRet(RET.HESH, R, 'x'), lead = Math.abs(mx - col), t = tof(r, R);
+    tech.push(`Lead ${fmt(lead, 2)} mrad · speed implied by the model ≈ ${fmt(lead / 1000 * R / t * 3.6, 0)} km/h (open: gap 5)`);
   }
-  if (p.prim === 'textbox') facts.unshift(`Label "${p.text}"${R ? ' = ' + fmt(R) + ' m' : ''}`);
-  if (p.layer === 'Zero') facts.push('Origin (0, 0). Every Y value = gun elevation above the line of sight');
-  facts.push(`Primitive #${p.id} · ${p.prim} · (${fmt(p.x1, 2)}, ${fmt(p.y1, 2)})${p.x2 !== null ? ' → (' + fmt(p.x2, 2) + ', ' + fmt(p.y2, 2) + ')' : ''}${p.r ? ' r ' + fmt(p.r, 2) : ''}`);
-  return { title, body, facts, key: L.key, color: L.color };
+  if (p.layer === 'Zero') use.push('Every other mark is measured down and across from here.');
+  tech.push(`#${p.id} ${p.prim} (${fmt(p.x1, 2)}, ${fmt(p.y1, 2)})${p.x2 !== null ? ' → (' + fmt(p.x2, 2) + ', ' + fmt(p.y2, 2) + ')' : ''}${p.r ? ' r ' + fmt(p.r, 2) : ''}`);
+  return { title, body: LAYER_TEXT[p.layer], use, tech, key: L.key, color: L.color };
 }
 function renderCard(p, layer) {
   const card = document.getElementById('card');
-  let d;
-  if (p) d = describe(p);
-  else { const L = LAYERS[layer || 'HESH']; d = { title: L.name, body: LAYER_TEXT[layer || 'HESH'], facts: ['Hover a mark in the sight for its exact values'], key: L.key, color: L.color }; }
+  const d = p ? describe(p) : (() => { const L = LAYERS[layer]; return { title: L.name, body: LAYER_TEXT[layer], use: ['Point at any mark in the sight to see how to use it.'], tech: [], key: L.key, color: L.color }; })();
   card.style.setProperty('--c', `var(${d.color})`);
-  card.innerHTML = `<h3><span class="badge">${d.key}</span>${d.title}</h3><p>${d.body}</p><div class="facts">${d.facts.join('<br>')}</div>`;
+  card.innerHTML = `<h3><span class="badge">${d.key}</span>${d.title}</h3>${d.use.map(u => `<p class="use">${u}</p>`).join('')}<p>${d.body}</p>${S.instr && d.tech.length ? `<div class="facts">${d.tech.join('<br>')}</div>` : ''}`;
 }
 (function buildLegend() {
   const lg = document.getElementById('legend');
   for (const [k, L] of Object.entries(LAYERS)) {
     const b = document.createElement('button'); b.style.setProperty('--c', `var(${L.color})`);
-    b.innerHTML = `<span class="badge">${L.key}</span>${L.name.replace('Round 1 · ', '').replace('Round 2 · ', '')}`;
-    b.setAttribute('aria-pressed', 'false');
+    b.innerHTML = `<span class="badge">${L.key}</span>${L.name.replace('Round 1 · ', '').replace('Round 2 · ', '')}`; b.setAttribute('aria-pressed', 'false');
     b.onclick = () => { S.pinLayer = S.pinLayer === k ? null : k; [...lg.children].forEach(c => c.setAttribute('aria-pressed', 'false')); if (S.pinLayer) b.setAttribute('aria-pressed', 'true'); renderCard(null, k); };
     lg.appendChild(b);
   }
@@ -1281,79 +1318,56 @@ function renderCard(p, layer) {
 function drawOverlay(M) {
   const c = ctx; c.setTransform(DPR, 0, 0, DPR, 0, 0); c.clearRect(0, 0, SZ, SZ);
   const ppm = M.ppm;
-  // dev grid (Figure 1 style)
   if (S.dev) {
-    c.lineWidth = 1;
     const v = M.v, x0 = Math.ceil(v.cx - v.r), x1 = Math.floor(v.cx + v.r), y0 = Math.ceil(v.cy - v.r), y1 = Math.floor(v.cy + v.r);
-    for (let x = x0; x <= x1; x++) { c.strokeStyle = x % 5 === 0 ? 'rgba(40,90,160,.45)' : 'rgba(40,90,160,.16)'; c.beginPath(); c.moveTo(M.px(x), 0); c.lineTo(M.px(x), SZ); c.stroke(); }
-    for (let y = y0; y <= y1; y++) { c.strokeStyle = y % 5 === 0 ? 'rgba(40,90,160,.45)' : 'rgba(40,90,160,.16)'; c.beginPath(); c.moveTo(0, M.py(y)); c.lineTo(SZ, M.py(y)); c.stroke(); }
-    c.fillStyle = 'rgba(30,70,130,.85)'; c.font = `500 ${Math.max(9, ppm * 0.9)}px ${cssVar('--f-data')}`;
-    for (let y = Math.ceil(y0 / 5) * 5; y <= y1; y += 5) c.fillText(String(y), M.px(v.cx - v.r * 0.62), M.py(y) - 2);
+    c.lineWidth = 1;
+    for (let x = x0; x <= x1; x++) { c.strokeStyle = x % 5 === 0 ? 'rgba(40,90,160,.45)' : 'rgba(40,90,160,.15)'; c.beginPath(); c.moveTo(M.px(x), 0); c.lineTo(M.px(x), SZ); c.stroke(); }
+    for (let y = y0; y <= y1; y++) { c.strokeStyle = y % 5 === 0 ? 'rgba(40,90,160,.45)' : 'rgba(40,90,160,.15)'; c.beginPath(); c.moveTo(0, M.py(y)); c.lineTo(SZ, M.py(y)); c.stroke(); }
+    c.fillStyle = 'rgba(30,70,130,.9)'; c.font = `500 ${Math.max(9, ppm * 0.8)}px ${'IBM Plex Mono, monospace'}`; c.textAlign = 'left'; c.textBaseline = 'alphabetic';
+    for (let y = Math.ceil(y0 / 5) * 5; y <= y1; y += 5) c.fillText(String(y), M.px(v.cx - v.r * 0.6), M.py(y) - 2);
     for (let x = Math.ceil(x0 / 5) * 5; x <= x1; x += 5) c.fillText(String(x), M.px(x) + 2, M.py(v.cy + v.r * 0.55));
   }
-  // explain: pale wash over the scene so the colour-coded reticle reads (as in Figure 2)
   if (S.explain) { c.save(); c.beginPath(); c.arc(SZ / 2, SZ / 2, SZ / 2, 0, Math.PI * 2); c.clip(); c.fillStyle = 'rgba(238,240,234,.62)'; c.fillRect(0, 0, SZ, SZ); c.restore(); }
-  // reticle
-  const hl = S.hover ? new Set(markCluster(S.hover).map(p => p.id)) : null;
+  const hl = S.explain && S.hover ? new Set(markCluster(S.hover).map(p => p.id)) : null;
   for (const p of PRIMS) {
-    let col = '#0b0b0a';
-    let w = Math.max(1, LINE_W * ppm);
-    if (S.explain) {
-      col = INK[p.layer];
-      const dim = (S.pinLayer && S.pinLayer !== p.layer);
-      c.globalAlpha = dim ? 0.25 : 1;
-      if (hl && hl.has(p.id)) { w *= 2.4; }
-    } else c.globalAlpha = 1;
+    let col = '#0b0b0a', w = Math.max(1, LINE_W * ppm);
+    c.globalAlpha = 1;
+    if (S.explain) { col = INK[p.layer]; if (S.pinLayer && S.pinLayer !== p.layer) c.globalAlpha = 0.22; if (hl && hl.has(p.id)) w *= 2.4; }
     c.strokeStyle = col; c.fillStyle = col; c.lineWidth = w; c.lineCap = 'butt';
     if (p.prim === 'line') { c.beginPath(); c.moveTo(M.px(p.x1), M.py(p.y1)); c.lineTo(M.px(p.x2), M.py(p.y2)); c.stroke(); }
     else if (p.prim === 'circle') { c.beginPath(); c.arc(M.px(p.x1), M.py(p.y1), p.r * ppm, 0, Math.PI * 2); c.stroke(); }
     else if (p.prim === 'dot') { c.beginPath(); c.arc(M.px(p.x1), M.py(p.y1), Math.max(0.9, DOT_D / 2 * ppm * (hl && hl.has(p.id) ? 2 : 1)), 0, Math.PI * 2); c.fill(); }
-    else if (p.prim === 'textbox') {
+    else {
       const h = (p.y2 - p.y1) * ppm, bold = p.layer === 'HESH' && ['10', '20', '30'].includes(p.text);
-      c.font = `${bold ? 700 : 400} ${h * 1.12}px Arial, Helvetica, sans-serif`;
-      c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.font = `${bold ? 700 : 400} ${h * 1.12}px Arial, Helvetica, sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle';
       c.fillText(p.text, M.px((p.x1 + p.x2) / 2), M.py((p.y1 + p.y2) / 2) + h * 0.04);
     }
   }
   c.globalAlpha = 1;
-  // explain badges
-  if (S.explain) {
-    for (const [k, L] of Object.entries(LAYERS)) {
-      const x = M.px(L.badge[0]), y = M.py(L.badge[1]), r = Math.max(8, ppm * 0.95);
-      c.fillStyle = INK[k]; c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.fill();
-      c.strokeStyle = 'rgba(0,0,0,.55)'; c.lineWidth = 1; c.stroke();
-      c.fillStyle = '#fff'; c.font = `700 ${r * 1.1}px ${cssVar('--f-ui')}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(L.key, x, y + 0.5);
-    }
+  if (S.explain) for (const [k, L] of Object.entries(LAYERS)) {
+    const x = M.px(L.badge[0]), y = M.py(L.badge[1]), r = Math.max(8, ppm * 1.05);
+    c.fillStyle = INK[k]; c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.fill(); c.strokeStyle = 'rgba(0,0,0,.5)'; c.lineWidth = 1; c.stroke();
+    c.fillStyle = '#fff'; c.font = `700 ${r * 1.1}px ${'IBM Plex Sans Condensed, sans-serif'}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(L.key, x, y + 0.5);
   }
-  // dev: trajectory of the selected round through the sight, target labels
   if (S.dev) {
     const r = S.ammo, tb = TAB[r][S.mode];
     c.strokeStyle = 'rgba(200,30,160,.9)'; c.lineWidth = 1.4; c.setLineDash([4, 3]); c.beginPath();
-    let first = true;
-    for (let s = 50; s <= 4000; s += 25) {
-      // aim point for range s (where the round meets a horizontal line of sight)
-      const y = at(tb.Y, s), x = at(tb.X, s);
-      const X = M.px(x), Y = M.py(y);
-      if (first) { c.moveTo(X, Y); first = false; } else c.lineTo(X, Y);
-    }
+    for (let s = 50; s <= 3600; s += 25) { const X = M.px(at(tb.X, s)), Y = M.py(at(tb.Y, s)); s === 50 ? c.moveTo(X, Y) : c.lineTo(X, Y); }
     c.stroke(); c.setLineDash([]);
-    c.fillStyle = 'rgba(200,30,160,.95)'; c.font = `600 ${Math.max(9, ppm * 0.85)}px ${cssVar('--f-data')}`; c.textAlign = 'left'; c.textBaseline = 'middle';
-    for (let s = 500; s <= 3500; s += 500) { const y = at(tb.Y, s), x = at(tb.X, s); c.beginPath(); c.arc(M.px(x), M.py(y), 2.5, 0, Math.PI * 2); c.fill(); c.fillText(String(s / 100), M.px(x) + 5, M.py(y)); }
-    c.fillText(`${r} ${S.mode === 'model' ? 'model' : 'reticle-ideal'} aim curve`, M.px(VIEW.cx + 9), M.py(VIEW.cy + 33));
+    c.fillStyle = 'rgba(200,30,160,.95)'; c.font = `600 ${Math.max(9, ppm * 0.8)}px IBM Plex Mono, monospace`; c.textAlign = 'left'; c.textBaseline = 'middle';
+    for (let s = 500; s <= 3500; s += 500) { const x = at(tb.X, s), y = at(tb.Y, s); c.beginPath(); c.arc(M.px(x), M.py(y), 2.5, 0, Math.PI * 2); c.fill(); c.fillText(String(s / 100), M.px(x) + 5, M.py(y)); }
     for (const t of targets) {
       const top = t.pos.clone(); top.y = t.h + 1.5; const q = toReticle(top); if (!q) continue;
       const X = M.px(q.x), Y = M.py(q.y); if (X < 0 || X > SZ || Y < 0 || Y > SZ) continue;
-      c.fillStyle = t.alive ? 'rgba(255,255,255,.92)' : 'rgba(255,255,255,.5)';
-      c.strokeStyle = 'rgba(0,0,0,.6)'; c.lineWidth = 3; c.font = `600 ${Math.max(10, ppm * 0.85)}px ${cssVar('--f-data')}`;
-      const txt = `T${t.id} ${fmt(trueRange(t))} m${t.speed ? ' ' + fmt(t.speed * 3.6) + ' km/h' : ''}`;
-      c.strokeText(txt, X + 4, Y - 6); c.fillText(txt, X + 4, Y - 6);
+      c.fillStyle = 'rgba(255,255,255,.92)'; c.strokeStyle = 'rgba(0,0,0,.6)'; c.lineWidth = 3; c.font = `600 ${Math.max(10, ppm * 0.8)}px IBM Plex Mono, monospace`;
+      const txt = `T${t.id} ${fmt(trueRange(t))} m${t.speed ? ' ' + fmt(t.speed * 3.6) + ' km/h' : ''}`; c.strokeText(txt, X + 4, Y - 6); c.fillText(txt, X + 4, Y - 6);
     }
   }
 }
 
 // ---------------------------------------------------------------- input
 const keys = new Set();
-function inField(e) { const t = e.target; return t && (t.tagName === 'INPUT' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA'); }
+const inField = e => { const t = e.target; return t && (t.tagName === 'INPUT' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA'); };
 window.addEventListener('keydown', e => {
   if (inField(e)) { if (e.key === 'Enter' && e.target.id === 'estimate') document.getElementById('btnCheck').click(); return; }
   const k = e.key.toLowerCase();
@@ -1362,22 +1376,17 @@ window.addEventListener('keydown', e => {
   if (e.repeat) return;
   if (k === ' ') trigger(true);
   else if (k === '1') selectAmmo('FIN'); else if (k === '2') selectAmmo('HESH'); else if (k === '3') selectAmmo('COAX');
-  else if (k === 'e') toggle('explain'); else if (k === 'g') toggle('dev'); else if (k === 'z') toggleZoom();
-  else if (k === 'd') toggle('disp'); else if (k === 'v') toggle('vib'); else if (k === 'o') toggle('blast');
-  else if (k === 'n') nextTarget();
+  else if (k === 'e') toggleExplain(); else if (k === 'n') nextTarget(); else if (k === 'escape') setInstr(false);
+  else if (S.instr && k === 'g') toggle('dev', 'tgDev'); else if (S.instr && k === 'z') toggleZoom();
 });
 window.addEventListener('keyup', e => { const k = e.key.toLowerCase(); keys.delete(k); if (!e.shiftKey) keys.delete('shift'); if (!e.ctrlKey) keys.delete('control'); if (k === ' ') trigger(false); });
 window.addEventListener('blur', () => { keys.clear(); trigger(false); });
 
-let drag = null, fineTouch = false;
+let drag = null;
 sightEl.addEventListener('pointerdown', e => { sightEl.focus(); drag = { x: e.clientX, y: e.clientY }; sightEl.setPointerCapture(e.pointerId); });
 sightEl.addEventListener('pointermove', e => {
   const rect = sightEl.getBoundingClientRect(); S.mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-  if (drag) {
-    const M = mapper(), k = (e.shiftKey || fineTouch ? 0.2 : 1) / M.ppm / 1000;
-    S.az += (e.clientX - drag.x) * k; S.el -= (e.clientY - drag.y) * k; clampGun();
-    drag = { x: e.clientX, y: e.clientY };
-  }
+  if (drag) { const k = (e.shiftKey || S.fine ? 0.2 : 1) / mapper().ppm / 1000; S.az += (e.clientX - drag.x) * k; S.el -= (e.clientY - drag.y) * k; clampGun(); drag = { x: e.clientX, y: e.clientY }; }
 });
 sightEl.addEventListener('pointerup', () => drag = null);
 sightEl.addEventListener('pointercancel', () => drag = null);
@@ -1387,133 +1396,115 @@ function clampGun() { S.el = Math.max(-0.17, Math.min(0.35, S.el)); }
 
 function trigger(down) {
   if (S.ammo === 'COAX') { S.firing = down; if (down && S.coaxCool <= 0) { fire('COAX'); S.coaxCool = 0.085; } return; }
-  if (!down) return;
-  if (S.reload > 0 || S.loaded !== S.ammo) return;
-  fire(S.ammo); S.loaded = null; startReload(S.ammo);
+  if (!down || S.reload > 0 || S.loaded !== S.ammo) return;
+  fire(S.ammo); S.loaded = null; S.reload = 6; S.reloadFor = S.ammo;
 }
-function startReload(r) { S.reload = 6; S.reloadFor = r; }
 function selectAmmo(a) {
   S.ammo = a; S.firing = false;
-  document.querySelectorAll('#ammoSeg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.ammo === a)));
-  if (a !== 'COAX' && S.loaded !== a && !(S.reload > 0 && S.reloadFor === a)) startReload(a);
+  document.querySelectorAll('.ammoSeg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.ammo === a)));
+  if (a !== 'COAX' && S.loaded !== a && !(S.reload > 0 && S.reloadFor === a)) { S.reload = 6; S.reloadFor = a; S.loaded = null; }
   if (S.explain && !S.hover) renderCard(null, a === 'COAX' ? 'Coax' : a);
 }
-document.querySelectorAll('#ammoSeg button').forEach(b => b.onclick = () => selectAmmo(b.dataset.ammo));
-function toggle(name) {
-  S[name] = !S[name];
-  const map = { explain: 'tgExplain', dev: 'tgDev', disp: 'tgDisp', vib: 'tgVib', blast: 'tgBlast' };
-  document.getElementById(map[name]).setAttribute('aria-pressed', String(S[name]));
-  if (name === 'explain') { document.getElementById('explainSec').classList.toggle('on', S.explain); if (S.explain) renderCard(null, S.ammo === 'COAX' ? 'Coax' : S.ammo); else S.hover = null; }
+document.querySelectorAll('.ammoSeg button').forEach(b => b.onclick = () => selectAmmo(b.dataset.ammo));
+document.querySelectorAll('[data-fire]').forEach(b => {
+  b.addEventListener('pointerdown', e => { e.preventDefault(); trigger(true); });
+  b.addEventListener('pointerup', () => trigger(false)); b.addEventListener('pointerleave', () => trigger(false));
+});
+function toggle(name, id) { S[name] = !S[name]; document.getElementById(id).setAttribute('aria-pressed', String(S[name])); }
+function toggleExplain() {
+  S.explain = !S.explain;
+  document.getElementById('tgExplain').setAttribute('aria-pressed', String(S.explain));
+  document.getElementById('mExplain').classList.toggle('primary', S.explain);
+  document.getElementById('explainSec').hidden = !S.explain;
+  if (S.explain) renderCard(null, S.ammo === 'COAX' ? 'Coax' : S.ammo); else { S.hover = null; S.pinLayer = null; }
 }
 function toggleZoom() {
   S.zoom = !S.zoom;
-  if (S.zoom) { const M = mapper(); S.zoomC = S.mouse ? M.inv(S.mouse.x, S.mouse.y) : { x: VIEW.cx, y: VIEW.cy }; }
+  if (S.zoom) S.zoomC = S.mouse ? mapper().inv(S.mouse.x, S.mouse.y) : { x: VIEW.cx, y: VIEW.cy };
   document.getElementById('tgZoom').setAttribute('aria-pressed', String(S.zoom));
 }
-document.getElementById('tgExplain').onclick = () => toggle('explain');
-document.getElementById('tgDev').onclick = () => toggle('dev');
-document.getElementById('tgZoom').onclick = () => toggleZoom();
-document.getElementById('tgDisp').onclick = () => toggle('disp');
-document.getElementById('tgVib').onclick = () => toggle('vib');
-document.getElementById('tgBlast').onclick = () => toggle('blast');
-document.querySelectorAll('#modeSeg button').forEach(b => b.onclick = () => {
-  S.mode = b.dataset.mode; document.querySelectorAll('#modeSeg button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); modeNote();
-});
-function modeNote() {
-  document.getElementById('modeNote').textContent = S.mode === 'model'
-    ? 'Physics model: rounds fly the spec 6.1 point-mass trajectories. Where the model and the reticle disagree, laying the correct mark still misses. See the verification table.'
-    : 'Reticle-ideal: every aim point is exactly right by definition. Use it to train the drill; switch back to the model to see the gaps.';
-  document.getElementById('sbMode').textContent = S.mode === 'model' ? 'MODEL' : 'RETICLE';
+function setInstr(on) {
+  S.instr = on; const d = document.getElementById('drawer'); d.classList.toggle('open', on); d.setAttribute('aria-hidden', String(!on));
+  if (!on) { S.dev = false; S.zoom = false; document.getElementById('tgDev').setAttribute('aria-pressed', 'false'); document.getElementById('tgZoom').setAttribute('aria-pressed', 'false'); }
+  if (S.explain && S.hover) renderCard(S.hover);
 }
+document.getElementById('tgExplain').onclick = toggleExplain;
+document.getElementById('mExplain').onclick = toggleExplain;
+document.getElementById('mFine').onclick = e => { S.fine = !S.fine; e.currentTarget.classList.toggle('primary', S.fine); };
+document.getElementById('btnInstr').onclick = () => setInstr(true);
+document.getElementById('btnInstrClose').onclick = () => setInstr(false);
+document.getElementById('tgDev').onclick = () => toggle('dev', 'tgDev');
+document.getElementById('tgZoom').onclick = toggleZoom;
+document.getElementById('tgDisp').onclick = () => toggle('disp', 'tgDisp');
+document.getElementById('tgVib').onclick = () => toggle('vib', 'tgVib');
+document.getElementById('tgBlast').onclick = () => toggle('blast', 'tgBlast');
+document.getElementById('tgModel').onclick = e => { S.mode = S.mode === 'model' ? 'reticle' : 'model'; e.currentTarget.setAttribute('aria-pressed', String(S.mode === 'model')); document.getElementById('rMode').textContent = S.mode === 'model' ? 'physics model' : 'reticle'; };
 document.getElementById('scenario').onchange = e => { scenario = e.target.value; nextTarget(); };
-document.getElementById('btnNext').onclick = () => nextTarget();
-const tFire = document.getElementById('tFire');
-tFire.addEventListener('pointerdown', e => { e.preventDefault(); trigger(true); });
-tFire.addEventListener('pointerup', () => trigger(false));
-document.getElementById('tFine').onclick = e => { fineTouch = !fineTouch; e.currentTarget.classList.toggle('primary', fineTouch); };
+document.getElementById('btnNext').onclick = nextTarget;
 document.getElementById('btnCopy').onclick = async () => {
-  const head = 'shot,time_s,round,ballistics,target,range_m,estimate_m,result,impact_x_mrad,impact_y_mrad,tof_s';
-  const rows = shotLog.map(r => [r.n, r.time.toFixed(2), r.round, r.mode, r.target, r.range ? r.range.toFixed(0) : '', r.est || '', r.result,
-    r.dx !== null ? r.dx.toFixed(3) : '', r.dy !== null ? r.dy.toFixed(3) : '', r.tof.toFixed(3)].join(','));
-  const txt = [head].concat(rows).join('\n');
-  const note = document.getElementById('copyNote');
-  try { await navigator.clipboard.writeText(txt); note.textContent = `Copied ${rows.length} shots as CSV.`; }
-  catch { note.textContent = 'Clipboard blocked here. CSV printed to the browser console.'; console.log(txt); }
+  const head = 'shot,time_s,round,ballistics,target,range_m,estimate_m,result,impact_x_mrad,impact_y_mrad,tof_s,feedback';
+  const rows = shotLog.map(r => [r.n, r.time.toFixed(2), r.round, r.mode, r.target, r.range ? r.range.toFixed(0) : '', r.est || '', r.result, r.dx !== null ? r.dx.toFixed(3) : '', r.dy !== null ? r.dy.toFixed(3) : '', r.tof.toFixed(3), '"' + r.words + '"'].join(','));
+  const txt = [head].concat(rows).join('\n'), note = document.getElementById('copyNote');
+  try { await navigator.clipboard.writeText(txt); note.textContent = `Copied ${rows.length} shots as CSV.`; } catch { note.textContent = 'Clipboard blocked here. CSV printed to the browser console.'; console.log(txt); }
 };
-
-// ballistic parameters
 const PMAP = { pFinV: 'finV', pFinL: 'finL', pHeshV: 'heshV', pHeshBC: 'heshBC', pHeshK: 'heshK', pCoaxV: 'coaxV', pCoaxBC: 'coaxBC' };
 function syncParams() { for (const [id, k] of Object.entries(PMAP)) document.getElementById(id).value = P[k]; }
 for (const [id, k] of Object.entries(PMAP)) document.getElementById(id).addEventListener('change', e => { const v = parseFloat(e.target.value); if (isFinite(v) && v > 0) { P[k] = v; rebuild(); } else e.target.value = P[k]; });
 document.getElementById('btnReset').onclick = () => { Object.assign(P, DEFAULTS); syncParams(); rebuild(); };
 function renderBalTable() {
   const rows = [['FIN', [800, 1200, 1600, 2000, 2400]], ['HESH', [600, 1000, 1400, 2000, 2600, 3200]], ['COAX', [400, 800, 1200, 1800]]];
-  const tb = document.querySelector('#balTbl tbody'); let h = '';
+  let h = '';
   for (const [r, Rs] of rows) for (const R of Rs) {
     const ry = RET[r].find(a => a.R === R).y, my = modelY(r, R), miss = my - ry;
-    h += `<tr><td>${r === 'COAX' ? 'Coax' : r}</td><td>${fmt(R)}</td><td>${fmt(ry, 2)}</td><td>${fmt(my, 2)}</td><td>${fmt(my / ry, 3)}</td><td class="${Math.abs(miss) <= 0.1 ? 'pass' : 'fail'}">${miss >= 0 ? '+' : ''}${fmt(miss, 2)}</td><td>${fmt(miss * R / 1000, 2)}</td><td>${fmt(tof(r, R), 2)}</td></tr>`;
+    h += `<tr><td>${r === 'COAX' ? 'Coax' : r}</td><td>${fmt(R)}</td><td>${fmt(ry, 2)}</td><td>${fmt(my, 2)}</td><td>${fmt(my / ry, 3)}</td><td class="${Math.abs(miss) <= 0.1 ? 'pass' : 'fail'}">${miss >= 0 ? '+' : ''}${fmt(miss, 2)}</td><td>${fmt(miss * R / 1000, 2)}</td></tr>`;
   }
-  tb.innerHTML = h;
+  document.querySelector('#balTbl tbody').innerHTML = h;
 }
 
 // ---------------------------------------------------------------- main loop
 let last = performance.now();
 function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000); last = now; S.time += dt;
-  // laying by keys (rate control)
-  const fine = keys.has('shift'), fast = keys.has('control');
-  const rate = (fast ? 0.15 : fine ? 0.002 : 0.02) * dt;
-  if (keys.has('arrowleft')) S.az -= rate;
-  if (keys.has('arrowright')) S.az += rate;
-  if (keys.has('arrowup')) S.el += rate;
-  if (keys.has('arrowdown')) S.el -= rate;
+  const rate = (keys.has('control') ? 0.15 : keys.has('shift') ? 0.002 : 0.02) * dt;
+  if (keys.has('arrowleft')) S.az -= rate; if (keys.has('arrowright')) S.az += rate;
+  if (keys.has('arrowup')) S.el += rate; if (keys.has('arrowdown')) S.el -= rate;
   clampGun();
-  // hull vibration (unstabilised sight, GAS-03) + recoil
-  const vib = S.vib ? 0.00005 * (Math.sin(S.time * 23.1) + 0.6 * Math.sin(S.time * 37.7 + 1.3)) : 0;
-  const vibx = S.vib ? 0.00003 * Math.sin(S.time * 29.3 + 0.4) : 0;
+  const vib = S.vib ? 0.00005 * (Math.sin(S.time * 23.1) + 0.6 * Math.sin(S.time * 37.7 + 1.3)) : 0, vibx = S.vib ? 0.00003 * Math.sin(S.time * 29.3 + 0.4) : 0;
   S.kick = Math.max(0, S.kick - dt * 1.6);
-  const recoil = S.kick > 0 ? 0.006 * Math.sin(S.kick * Math.PI) * S.kick : 0;
-  S.azEff = S.az + vibx; S.elEff = S.el + vib + recoil;
-  camera.rotation.set(S.elEff, -S.azEff, 0);
-  camera.updateMatrixWorld(true);
-  // reload / coax
+  S.azEff = S.az + vibx; S.elEff = S.el + vib + (S.kick > 0 ? 0.006 * Math.sin(S.kick * Math.PI) * S.kick : 0);
+  camera.rotation.set(S.elEff, -S.azEff, 0); camera.updateMatrixWorld(true);
   if (S.reload > 0) { S.reload -= dt; if (S.reload <= 0) { S.reload = 0; S.loaded = S.reloadFor; } }
   S.coaxCool -= dt; if (S.firing && S.ammo === 'COAX' && S.coaxCool <= 0) { fire('COAX'); S.coaxCool = 0.085; }
-  // targets move
   for (const t of targets) if (t.speed && t.alive) {
-    const a = t.yaw; const step = t.speed * dt * t.dir;
-    t.pos.x += Math.sin(a) * step; t.pos.z -= Math.cos(a) * step;
-    if (t.pos.distanceTo(t.origin) > t.travel) { t.dir *= -1; }
-    t.obj.rotation.y = -(t.yaw + (t.dir < 0 ? Math.PI : 0));
-    t.obj.position.copy(t.pos);
+    const step = t.speed * dt * t.dir; t.pos.x += Math.sin(t.yaw) * step; t.pos.z -= Math.cos(t.yaw) * step;
+    if (t.pos.distanceTo(t.origin) > t.travel) t.dir *= -1;
+    t.obj.rotation.y = -(t.yaw + (t.dir < 0 ? Math.PI : 0)); t.obj.position.copy(t.pos);
   }
   updateShells(dt); updateFx(dt);
-  // obscuration
-  S.blastA = Math.max(0, S.blastA - dt * 0.75);
-  document.getElementById('blast').style.opacity = S.blastA.toFixed(3);
-  // explain hover
+  S.blastA = Math.max(0, S.blastA - dt * 0.75); document.getElementById('blast').style.opacity = S.blastA.toFixed(3);
   const M = mapper();
   if (S.explain && S.mouse && !drag) {
     const q = M.inv(S.mouse.x, S.mouse.y); let best = null, bd = Math.max(0.5, 8 / M.ppm);
     for (const p of PRIMS) { if (S.pinLayer && p.layer !== S.pinLayer) continue; const d = primDist(p, q.x, q.y); if (d < bd) { bd = d; best = p; } }
-    if (best && best !== S.hover) { S.hover = best; renderCard(best); }
-    if (!best) S.hover = null;
+    if (best && best !== S.hover) { S.hover = best; renderCard(best); } if (!best) S.hover = null;
   }
-  setProjection(M);
-  renderer.render(scene, camera);
-  drawOverlay(M);
-  // status
+  setProjection(M); renderer.render(scene, camera); drawOverlay(M);
   document.getElementById('sbAmmo').textContent = S.ammo;
   const st = document.getElementById('sbState');
   if (S.ammo === 'COAX') { st.textContent = 'COAX READY'; st.className = 'chip armed'; }
-  else if (S.reload > 0) { st.textContent = `LOADING ${S.reloadFor} ${S.reload.toFixed(1)} s`; st.className = 'chip loading'; }
+  else if (S.reload > 0) { st.textContent = `LOADING ${S.reloadFor} ${S.reload.toFixed(1)} s`; st.className = 'chip'; }
   else if (S.loaded === S.ammo) { st.textContent = `${S.ammo} LOADED`; st.className = 'chip armed'; }
-  document.getElementById('sbAz').textContent = (S.az * 1000).toFixed(1);
-  document.getElementById('sbEl').textContent = (S.el * 1000).toFixed(1);
+  if (S.instr) { document.getElementById('rAz').textContent = (S.az * 1000).toFixed(1); document.getElementById('rEl').textContent = (S.el * 1000).toFixed(1); }
   requestAnimationFrame(frame);
 }
 
 // ---------------------------------------------------------------- boot
-syncParams(); rebuild(); modeNote(); renderEng(); resize(); nextTarget();
+document.getElementById('hRef').textContent = TANK_H.toFixed(2);
+// keep vegetation clear of the free-range target spots
+[[300, -6], [600, 5], [800, -12], [1000, 9], [1300, -3], [1650, 2.5], [2000, -8], [2400, 6.5], [2900, -1.5], [450, 13], [1100, -14.5], [250, -2.5], [550, 11], [900, -9.5], [1500, 12.5]]
+  .forEach(([R, a]) => { const r = a * Math.PI / 180; LAYOUT_SPOTS.push([Math.sin(r) * R, -Math.cos(r) * R]); });
+for (let x = -130; x <= 130; x += 20) { const r = -0.8 * Math.PI / 180; LAYOUT_SPOTS.push([Math.sin(r) * 700 + x, -Math.cos(r) * 700]); }
+buildVegetation();
+syncParams(); rebuild(); renderEng(); resize(); nextTarget();
 requestAnimationFrame(t => { last = t; frame(t); });
 </script>
