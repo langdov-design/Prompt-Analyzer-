@@ -52,6 +52,11 @@ button,input,select{font:inherit;color:inherit}
 .lang{display:flex;border:1px solid var(--line);border-radius:4px;overflow:hidden;flex:none}
 .lang button{background:var(--panel-2);border:0;padding:5px 9px;cursor:pointer;font-size:12.5px;font-weight:600;color:var(--muted)}
 .lang button[aria-pressed="true"]{background:var(--panel-3);color:var(--fg)}
+.headBtns{display:flex;gap:6px;align-items:flex-start;flex:none}
+.sndBtn{display:grid;place-items:center;width:32px;height:30px;background:var(--panel-2);border:1px solid var(--line);border-radius:4px;cursor:pointer;color:var(--fg)}
+.sndBtn[aria-pressed="false"]{color:var(--muted)}
+.sndBtn[aria-pressed="false"] .wave{display:none}
+.sndBtn[aria-pressed="true"] .x{display:none}
 .explainBtn{display:flex;align-items:center;gap:10px;width:100%;background:var(--panel-2);border:1px solid var(--line);border-radius:6px;padding:9px 12px;cursor:pointer;font-weight:600;text-align:start}
 .explainBtn .q{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--muted);display:grid;place-items:center;font-size:13px;flex:none}
 .explainBtn .kbd{margin-inline-start:auto;font-family:var(--f-data);font-size:10.5px;color:var(--muted);font-weight:400}
@@ -183,7 +188,10 @@ td.fail{color:var(--bad)} td.pass{color:var(--ok)}
     <div class="head">
       <div class="top">
         <div><h1 data-i18n="title"></h1><p data-i18n="subtitle"></p></div>
-        <div class="lang" role="group" aria-label="Language"><button data-lang="en" aria-pressed="true">EN</button><button data-lang="he" aria-pressed="false">עב</button></div>
+        <div class="headBtns">
+          <button class="sndBtn" id="btnSound" aria-pressed="true" aria-label="Sound"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z" fill="currentColor"/><path class="wave" d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/><path class="x" d="M16 9l5 6M21 9l-5 6"/></svg></button>
+          <div class="lang" role="group" aria-label="Language"><button data-lang="en" aria-pressed="true">EN</button><button data-lang="he" aria-pressed="false">עב</button></div>
+        </div>
       </div>
       <button class="explainBtn" id="tgExplain" aria-pressed="false"><span class="q">?</span><span data-i18n="explainBtn"></span><span class="kbd">E</span></button>
     </div>
@@ -687,7 +695,7 @@ const STR = {
     title: 'GAS Gunnery Trainer', subtitle: 'Challenger 2 emergency sight · ×8 fixed · slaved to the gun, not stabilised',
     override: 'MAN OVRD', explainBtn: 'Explain the sight',
     st1: 'Estimate range: fit the target in the range estimator.', st2: 'Pick your scale: FIN or HESH for the main gun, COAX for the MG.', st3: 'Aim and fire: centre column if still; lead marks if moving.',
-    step1: 'Estimate range', step1hint: 'Tank bottom on the long line, turret top on a dash. The number above the dash = range in hundreds of metres.',
+    step1: 'Estimate range', step1hint: 'Tank bottom on the long line, turret top on a dash. The number above the dash = range in hundreds of metres. The line and the dash turn green when the fit is exact.', soundOn: 'Sound on', soundOff: 'Sound off',
     estPh: 'e.g. 1200', check: 'Check',
     step2: 'Choose ammunition', finSub: 'Armour piercing', heshSub: 'High explosive', coaxSub: '7.62 machine gun',
     step3: 'Lay and fire', step3hint: 'Lay the mark for your range on the centre of the target. Space fires; hold it for the coax.',
@@ -729,7 +737,7 @@ const STR = {
     title: 'מאמן ירי · כוונת חירום', subtitle: 'צ׳לנג׳ר 2 · כוונת GAS · הגדלה ×8 קבועה · צמודה לתותח, לא מיוצבת',
     override: 'עקיפה ידנית', explainBtn: 'הסבר על הכוונת',
     st1: 'הערכת טווח: התאם את המטרה במד-הטווח.', st2: 'בחירת סולם: FIN או HESH לתותח, COAX למקלע.', st3: 'כיוון וירי: עמודה מרכזית למטרה נייחת; סימני הובלה למטרה נעה.',
-    step1: 'הערכת טווח', step1hint: 'תחתית הטנק על הקו הארוך, גג הצריח על מקף. המספר מעל המקף = הטווח במאות מטרים.',
+    step1: 'הערכת טווח', step1hint: 'תחתית הטנק על הקו הארוך, גג הצריח על מקף. המספר מעל המקף = הטווח במאות מטרים. הקו והמקף נצבעים בירוק כשההתאמה מדויקת.', soundOn: 'צליל פועל', soundOff: 'צליל כבוי',
     estPh: 'למשל 1200', check: 'בדוק',
     step2: 'בחירת תחמושת', finSub: 'חודר שריון', heshSub: 'נפיץ', coaxSub: 'מקלע 7.62',
     step3: 'כיוון וירי', step3hint: 'הנח את סימן הטווח על מרכז המטרה. רווח = ירי; החזק לירי מקלע.',
@@ -802,6 +810,19 @@ function aimTable(layer) {
   return rows.sort((a, b) => a.R - b.R);
 }
 const RET = { FIN: aimTable('FIN'), HESH: aimTable('HESH'), COAX: aimTable('Coax') };
+// range estimator geometry and the target height each dash implies (gap × range)
+const STADIA = (() => {
+  const base = PRIMS.find(p => p.item === 'base line'), dashes = PRIMS.filter(p => p.item === 'range dash').sort((a, b) => a.range - b.range);
+  const pts = dashes.map(d => [d.range, (base.y1 - d.y1) * d.range / 1000]);
+  dashes.forEach((d, i) => { const gaps = []; if (i > 0) gaps.push(dashes[i - 1].y1 - d.y1); if (i < dashes.length - 1) gaps.push(d.y1 - dashes[i + 1].y1); d.tol = Math.min(0.12, 0.45 * Math.min(...gaps.map(Math.abs))); });
+  const labels = PRIMS.filter(p => p.layer === 'Stadia' && p.item === 'label');
+  return { base, dashes, pts, labels };
+})();
+// height a target at range R must have so that a perfect fit reads exactly R (interpolated between dashes)
+function stadiaH(R) {
+  const P = STADIA.pts; if (R <= P[0][0]) return P[0][1]; if (R >= P[P.length - 1][0]) return P[P.length - 1][1];
+  for (let i = 1; i < P.length; i++) if (R <= P[i][0]) { const f = (R - P[i - 1][0]) / (P[i][0] - P[i - 1][0]); return P[i - 1][1] + f * (P[i][1] - P[i - 1][1]); }
+}
 const TANK_H = (() => {   // reference target height the stadia is drawn for (gap × range)
   const base = PRIMS.find(p => p.item === 'base line').y1, d = PRIMS.filter(p => p.item === 'range dash');
   return Math.round(d.reduce((a, p) => a + (base - p.y1) * p.range / 1000, 0) / d.length * 100) / 100;
@@ -956,11 +977,11 @@ function topExtrude(outline, y0, h, mat) { const g = new THREE.ExtrudeGeometry(s
 function cyl(r0, r1, len, mat, seg = 12) { return new THREE.Mesh(new THREE.CylinderGeometry(r0, r1, len, seg), mat); }
 function at3(m, x, y, z) { m.position.set(x, y, z); return m; }
 function shadowMesh(w, l) { const s = new THREE.Mesh(new THREE.PlaneGeometry(w, l), SHADOW); s.rotation.x = -Math.PI / 2; s.position.y = 0.03; s.userData.keep = true; return s; }
-function makeTank() {
-  const H = TANK_H, g = new THREE.Group(), turret = new THREE.Group();
+function makeTank(H = TANK_H) {
+  const g = new THREE.Group(), turret = new THREE.Group();
   g.add(shadowMesh(5.2, 9.5));
   for (const sx of [-1, 1]) {
-    g.add(sideExtrude([[-3.62, 0.36], [-3.3, 0.04], [3.25, 0.04], [3.7, 0.44], [3.42, 0.82], [-3.42, 0.82]], 0.64, MAT.track, sx * 1.47));
+    g.add(sideExtrude([[-3.62, 0.34], [-3.3, 0], [3.25, 0], [3.7, 0.42], [3.42, 0.82], [-3.42, 0.82]], 0.64, MAT.track, sx * 1.47));
     for (let i = 0; i < 6; i++) { const w = cyl(0.33, 0.33, 0.12, MAT.wheel, 14); w.rotation.z = Math.PI / 2; g.add(at3(w, sx * 1.81, 0.38, -2.55 + i * 1.02)); }
     g.add(at3(new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.42, 6.3), MAT.hull), sx * 1.82, 0.74, 0.1));
   }
@@ -978,8 +999,8 @@ function makeTank() {
   g.add(turret);
   return { group: g, turret, boxes: [[-1.85, 0, -3.8, 1.85, 1.42, 3.6], [-1.6, 1.42, -2.2, 1.6, H, 2.6]], h: H };
 }
-function makeWheeled() {
-  const H = TANK_H, g = new THREE.Group(), turret = new THREE.Group();
+function makeWheeled(H = TANK_H) {
+  const g = new THREE.Group(), turret = new THREE.Group();
   g.add(shadowMesh(3.8, 8));
   g.add(sideExtrude([[-3.05, 0.62], [2.75, 0.62], [3.3, 1.08], [2.35, 1.8], [-3.05, 1.8]], 2.5, MAT.hull));
   for (const sx of [-1, 1]) for (const z of [-2.0, -0.4, 1.9]) { const w = cyl(0.55, 0.55, 0.4, MAT.tyre, 16); w.rotation.z = Math.PI / 2; g.add(at3(w, sx * 1.2, 0.55, z)); }
@@ -1013,7 +1034,7 @@ function makeInfantry(n) {
 }
 let targets = [], tid = 0;
 function addTarget(kind, range, azDeg, opts = {}) {
-  const a = azDeg * Math.PI / 180, mk = kind === 'infantry' ? makeInfantry(opts.n || 4) : kind === 'wheeled' ? makeWheeled() : makeTank();
+  const a = azDeg * Math.PI / 180, H = stadiaH(range), mk = kind === 'infantry' ? makeInfantry(opts.n || 4) : kind === 'wheeled' ? makeWheeled(H) : makeTank(H);
   // facing: 'front' = gun pointing at us, 'side' = broadside, 'oblique' = three-quarter
   const face = opts.face || 'oblique', yaw = a + (face === 'front' ? Math.PI : face === 'side' ? Math.PI / 2 * (opts.flip ? -1 : 1) : Math.PI * (opts.flip ? 0.75 : 1.25));
   mk.group.traverse(o => { if (o.isMesh) o.userData.mat0 = o.material; });
@@ -1074,6 +1095,59 @@ function updateFx(dt) {
   }
 }
 
+// ---------------------------------------------------------------- audio
+const AUDIO = { ctx: null, master: null, noise: null, on: true };
+try { if (localStorage.getItem('gasSound') === 'off') AUDIO.on = false; } catch (e) {}
+function audioInit() {
+  const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+  if (AUDIO.ctx) { if (AUDIO.ctx.state === 'suspended') AUDIO.ctx.resume(); return; }
+  const c = new AC(); AUDIO.ctx = c;
+  const comp = c.createDynamicsCompressor(); comp.threshold.value = -10; comp.ratio.value = 6; comp.connect(c.destination);
+  AUDIO.master = c.createGain(); AUDIO.master.gain.value = AUDIO.on ? 0.9 : 0; AUDIO.master.connect(comp);
+  const len = c.sampleRate * 3, buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+  AUDIO.noise = buf;
+}
+window.addEventListener('pointerdown', audioInit, true); window.addEventListener('keydown', audioInit, true);
+function nz(t, { type = 'lowpass', f0, f1, q = 0.7, peak, att = 0.003, dec }) {
+  const c = AUDIO.ctx, s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
+  s.buffer = AUDIO.noise; f.type = type; f.Q.value = q;
+  f.frequency.setValueAtTime(f0, t); f.frequency.exponentialRampToValueAtTime(f1, t + att + dec);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + att); g.gain.exponentialRampToValueAtTime(0.0001, t + att + dec);
+  s.connect(f); f.connect(g); g.connect(AUDIO.master); s.start(t, Math.random() * 2); s.stop(t + att + dec + 0.05);
+}
+function tone(t, { f0, f1, peak, att = 0.004, dec, type = 'sine' }) {
+  const c = AUDIO.ctx, o = c.createOscillator(), g = c.createGain();
+  o.type = type; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + att + dec);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + att); g.gain.exponentialRampToValueAtTime(0.0001, t + att + dec);
+  o.connect(g); g.connect(AUDIO.master); o.start(t); o.stop(t + att + dec + 0.05);
+}
+const SND = {
+  ok() { return AUDIO.ctx && AUDIO.on && AUDIO.ctx.state === 'running'; },
+  gun() {   // main gun: same report for FIN and HESH
+    if (!SND.ok()) return; const t = AUDIO.ctx.currentTime;
+    nz(t, { f0: 4000, f1: 160, peak: 1.0, att: 0.002, dec: 1.3 });
+    tone(t, { f0: 85, f1: 30, peak: 0.9, att: 0.003, dec: 0.7 });
+    nz(t + 0.05, { f0: 500, f1: 90, peak: 0.28, att: 0.08, dec: 2.4 });
+  },
+  coax() {   // one 7.62 round; held trigger = a burst
+    if (!SND.ok()) return; const t = AUDIO.ctx.currentTime + Math.random() * 0.004;
+    nz(t, { type: 'bandpass', f0: 2600, f1: 1200, q: 0.9, peak: 0.42, att: 0.001, dec: 0.07 });
+    nz(t, { f0: 900, f1: 200, peak: 0.3, att: 0.002, dec: 0.13 });
+  },
+  boom() {   // target destroyed
+    if (!SND.ok()) return; const t = AUDIO.ctx.currentTime;
+    nz(t, { f0: 1800, f1: 110, peak: 0.75, att: 0.01, dec: 1.9 });
+    tone(t, { f0: 60, f1: 26, peak: 0.6, att: 0.01, dec: 1.0 });
+    for (let i = 0; i < 5; i++) nz(t + 0.15 + Math.random() * 0.7, { type: 'bandpass', f0: 1500, f1: 700, q: 1.2, peak: 0.12, att: 0.002, dec: 0.08 });
+  }
+};
+function setSound(on) {
+  AUDIO.on = on; try { localStorage.setItem('gasSound', on ? 'on' : 'off'); } catch (e) {}
+  if (AUDIO.master) AUDIO.master.gain.value = on ? 0.9 : 0;
+  const b = document.getElementById('btnSound'); b.setAttribute('aria-pressed', String(on)); b.title = T(on ? 'soundOn' : 'soundOff'); b.setAttribute('aria-label', b.title);
+}
+
 // ---------------------------------------------------------------- projectiles
 const shells = [], shotLog = [];
 let shotSeq = 0;
@@ -1085,6 +1159,7 @@ function fire(round) {
   sp.scale.setScalar(isCoax ? 0.011 : 0.018); scene.add(sp);
   shells.push({ id: ++shotSeq, round, az0: S.azEff + gauss() * sd, el0: S.elEff + gauss() * sd, t: 0, s: 0, prev: MUZZLE.clone(), sp, mode: S.mode,
     firedAt: S.time, estimate: parseFloat(document.getElementById('estimate').value) || null });
+  if (isCoax) SND.coax(); else SND.gun();
   if (!isCoax) { S.rounds++; S.kick = 1; if (S.blast) S.blastA = 0.8; puff(MUZZLE.clone().add(dirOf(S.azEff, S.elEff).multiplyScalar(25)), TEX.dust, 4, 16, 1.4, { alpha: 0.5 }); renderScore(); }
 }
 function shellPos(sh, s) {
@@ -1177,9 +1252,21 @@ function applyHit(t, round, info, hp) {
   if (round === 'COAX') { puff(hp, TEX.flash, 0.3, 0.8, 0.12, { add: true }); if (t.kind === 'wheeled' && t.hits >= 5) kill(t); return; }
   kill(t);
 }
+// which stadia lines a target currently fits: bottom on the long line, turret top on a dash
+function stadiaFit() {
+  const fit = { base: false, dash: null }, B = STADIA.base;
+  for (const t of targets) {
+    if (t.kind === 'infantry' || !t.alive) continue;
+    const bot = toReticle(t.pos.clone()), top = toReticle(t.pos.clone().setY(t.h)); if (!bot || !top) continue;
+    if (top.x < B.x1 - 0.5 || top.x > B.x2 + 0.5 || Math.abs(bot.y - B.y1) > 0.12) continue;
+    fit.base = true;
+    for (const d of STADIA.dashes) if (top.x >= d.x1 - 0.6 && top.x <= d.x2 + 0.6 && Math.abs(top.y - d.y1) <= d.tol) fit.dash = d;
+  }
+  return fit;
+}
 function kill(t) {
   if (!t.alive) return;
-  t.alive = false; t.killedAt = S.time; S.kills++; renderScore();
+  t.alive = false; t.killedAt = S.time; S.kills++; renderScore(); SND.boom();
   t.obj.traverse(o => { if (o.isMesh && !o.userData.keep) o.material = MAT.dead; });
   t.turret.rotation.set(0.12, 0.45, 0.08); t.turret.position.set(0.35, 0.18, 0.25);
   const p = t.pos.clone(); p.y = t.h * 0.7;
@@ -1397,10 +1484,13 @@ function drawOverlay(M) {
   }
   if (S.explain) { c.save(); c.beginPath(); c.arc(SZ / 2, SZ / 2, SZ / 2, 0, Math.PI * 2); c.clip(); c.fillStyle = 'rgba(244,245,240,.34)'; c.fillRect(0, 0, SZ, SZ); c.restore(); }
   const hl = S.explain && S.hover ? new Set(markCluster(S.hover).map(p => p.id)) : null;
+  const fitIds = new Set();
+  if (S.fit && S.fit.base) { fitIds.add(STADIA.base.id); if (S.fit.dash) { fitIds.add(S.fit.dash.id); const lb = STADIA.labels.find(l => l.range === S.fit.dash.range); if (lb) fitIds.add(lb.id); } }
   for (const p of PRIMS) {
     let col = '#0b0b0a', w = Math.max(1, LINE_W * ppm);
     c.globalAlpha = 1;
     if (S.explain) { col = INK[p.layer]; if (S.pinLayer && S.pinLayer !== p.layer) c.globalAlpha = 0.22; if (hl && hl.has(p.id)) w *= 2.4; }
+    if (fitIds.has(p.id)) { col = '#2fe36a'; w = Math.max(2, w * 1.9); c.globalAlpha = 1; }
     const passes = S.explain ? [['rgba(255,255,255,.3)', w + 1.2], [col, w]] : [[col, w]];
     for (const [pc, pw] of passes) {
       const halo = passes.length > 1 && pc !== col;
@@ -1452,7 +1542,7 @@ function applyLang() {
   document.querySelector('.mbar').dir = rtl ? 'rtl' : 'ltr';
   document.documentElement.lang = rtl ? 'he' : 'en';
   document.querySelectorAll('.lang button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.lang === lang)));
-  setPrompt(T(promptKey)); renderResult(S.lastRec); renderScore(); buildLegend();
+  setPrompt(T(promptKey)); renderResult(S.lastRec); renderScore(); buildLegend(); setSound(AUDIO.on);
   if (S.explain) S.hover ? renderCard(S.hover) : renderCard(null, S.ammo === 'COAX' ? 'Coax' : S.ammo);
 }
 document.querySelectorAll('.lang button').forEach(b => b.onclick = () => { lang = b.dataset.lang; try { localStorage.setItem('gasLang', lang); } catch (e) {} applyLang(); });
@@ -1521,6 +1611,7 @@ function setDev(on) {
   if (!on) { S.dev = false; S.zoom = false; document.getElementById('tgDev').setAttribute('aria-pressed', 'false'); document.getElementById('tgZoom').setAttribute('aria-pressed', 'false'); }
   if (S.explain && S.hover) renderCard(S.hover);
 }
+document.getElementById('btnSound').onclick = () => { audioInit(); setSound(!AUDIO.on); };
 document.getElementById('tgExplain').onclick = toggleExplain;
 document.getElementById('mExplain').onclick = toggleExplain;
 document.getElementById('btnCheck').onclick = checkEstimate;
@@ -1584,7 +1675,7 @@ function frame(now) {
     for (const p of PRIMS) { if (S.pinLayer && p.layer !== S.pinLayer) continue; const d = primDist(p, q.x, q.y); if (d < bd) { bd = d; best = p; } }
     if (best && best !== S.hover) { S.hover = best; renderCard(best); } if (!best) S.hover = null;
   }
-  setProjection(M); renderer.render(scene, camera); drawOverlay(M);
+  setProjection(M); S.fit = stadiaFit(); renderer.render(scene, camera); drawOverlay(M);
   // status and fire button
   let state, armed = true, prog = 0;
   if (S.ammo === 'COAX') state = T('coaxReady');
