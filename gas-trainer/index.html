@@ -1,0 +1,1603 @@
+<title>GAS Gunnery Trainer</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Heebo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: the eyepiece dominates; beside it a step-ordered control column (range → ammunition → fire → result).
+   Developer tools live in a separate drawer. Single dark look by choice: a sight housing. */
+:root{
+  --housing:#0c0f0d; --panel:#151a17; --panel-2:#1d2420; --panel-3:#252e29; --line:#2c3630;
+  --fg:#e3e8e1; --muted:#93a096; --accent:#e2a63b; --ok:#62c184; --bad:#ef6f55; --fire:#a8331f;
+  --c-zero:#f2f2f2; --c-stadia:#a274d6; --c-fin:#4f86e0; --c-hesh:#e07a2e; --c-coax:#2fae88; --c-lead:#9aa3ad; --c-unk:#e0503f;
+  --f-ui:"Inter","Heebo",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-data:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  color-scheme:dark;
+}
+html,body{height:100%}
+body{background:var(--housing);color:var(--fg);font-family:var(--f-ui);font-size:14px;line-height:1.4;margin:0;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px;box-sizing:border-box}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+button,input,select{font:inherit;color:inherit}
+[dir=rtl]{font-family:"Heebo","Inter",system-ui,sans-serif}
+.app{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:16px;height:100%;min-height:0}
+
+/* sight */
+.sight-col{display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0;min-height:0}
+.sight-wrap{position:relative;width:100%;flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
+.sight{position:relative;aspect-ratio:1/1;touch-action:none;cursor:crosshair;user-select:none;-webkit-user-select:none;outline:none}
+.sight canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.sight .mask{position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(circle closest-side at 50% 50%,transparent 0,transparent 80%,rgba(0,0,0,.25) 91%,rgba(0,0,0,.8) 98.4%,var(--housing) 100%)}
+.sight .blast{position:absolute;inset:0;pointer-events:none;opacity:0;border-radius:50%;
+  background:radial-gradient(circle closest-side at 50% 60%,rgba(180,165,135,.9),rgba(140,126,100,.8) 60%,rgba(95,85,68,.55) 100%)}
+.sight .ring{position:absolute;inset:0;border-radius:50%;box-shadow:0 0 0 2px #050605 inset,0 0 0 1px #2d3530;pointer-events:none}
+.sight:focus-visible .ring{box-shadow:0 0 0 2px #050605 inset,0 0 0 2px var(--accent)}
+.callout{position:absolute;left:50%;top:9%;transform:translateX(-50%);text-align:center;pointer-events:none;opacity:0;transition:opacity .25s;
+  font-weight:700;letter-spacing:.04em;text-shadow:0 1px 3px rgba(0,0,0,.9),0 0 1px #000;white-space:nowrap}
+.callout .main{font-size:clamp(18px,3.4vmin,30px)}
+.callout .main.hit{color:#7ef0a2}.callout .main.miss{color:#ffd28a}
+.callout .destroyed{margin-top:4px;font-size:clamp(20px,4.2vmin,38px);color:#ff5a3c;background:rgba(10,8,6,.66);padding:3px 14px;border:2px solid #ff5a3c;border-radius:3px;display:none}
+.callout.show{opacity:1}
+.statusbar{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;font-family:var(--f-data);font-size:12px;color:var(--muted)}
+.chip{display:inline-block;padding:2px 8px;border:1px solid var(--line);border-radius:3px;font-family:var(--f-data);font-size:11.5px;letter-spacing:.04em}
+.chip.armed{border-color:var(--accent);color:var(--accent)}
+
+/* panel */
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:auto;min-height:0;display:flex;flex-direction:column}
+.head{padding:14px 16px 12px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
+.head .top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.head h1{font-size:20px;font-weight:700;letter-spacing:-.01em;margin:0;line-height:1.15;text-wrap:balance}
+.head p{margin:3px 0 0;color:var(--muted);font-size:12.5px}
+.lang{display:flex;border:1px solid var(--line);border-radius:4px;overflow:hidden;flex:none}
+.lang button{background:var(--panel-2);border:0;padding:5px 9px;cursor:pointer;font-size:12.5px;font-weight:600;color:var(--muted)}
+.lang button[aria-pressed="true"]{background:var(--panel-3);color:var(--fg)}
+.explainBtn{display:flex;align-items:center;gap:10px;width:100%;background:var(--panel-2);border:1px solid var(--line);border-radius:6px;padding:9px 12px;cursor:pointer;font-weight:600;text-align:start}
+.explainBtn .q{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--muted);display:grid;place-items:center;font-size:13px;flex:none}
+.explainBtn .kbd{margin-inline-start:auto;font-family:var(--f-data);font-size:10.5px;color:var(--muted);font-weight:400}
+.explainBtn[aria-pressed="true"]{border-color:var(--accent);background:#2a2516}
+.explainBtn[aria-pressed="true"] .q{border-color:var(--accent);background:var(--accent);color:#1a1405}
+
+.step{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
+.step h2{margin:0;display:flex;align-items:center;gap:9px;font-size:15px;font-weight:600}
+.step h2 .num{width:22px;height:22px;border-radius:50%;background:var(--panel-3);color:var(--fg);display:grid;place-items:center;font-size:12px;font-weight:700;flex:none;font-family:var(--f-data)}
+.hint{margin:0;font-size:12.5px;color:var(--muted)}
+.estRow{display:flex;gap:8px}
+.estRow input{flex:1;min-width:0;background:var(--housing);border:1px solid var(--line);border-radius:6px;padding:9px 10px;font-family:var(--f-data);font-size:15px}
+.btn{background:var(--panel-2);border:1px solid var(--line);border-radius:6px;padding:9px 14px;cursor:pointer;font-weight:600}
+.btn:hover{background:var(--panel-3)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.estResult{background:var(--housing);border:1px solid var(--line);border-radius:6px;padding:9px 11px;font-size:13px;display:flex;flex-direction:column;gap:2px}
+.estResult .v{font-size:16px;font-weight:700}
+.estResult .v.ok{color:var(--ok)} .estResult .v.bad{color:var(--bad)}
+.estResult .s{color:var(--muted);font-size:12.5px}
+.ammo{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.ammo button{background:var(--panel-2);border:1px solid var(--line);border-radius:6px;padding:10px 6px 8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;min-height:66px}
+.ammo button .n{font-weight:700;font-size:17px;letter-spacing:.02em}
+.ammo button .s{font-size:11.5px;color:var(--muted);text-align:center;line-height:1.2}
+.ammo button .k{font-family:var(--f-data);font-size:10px;color:var(--muted)}
+.ammo button:hover{background:var(--panel-3)}
+.ammo button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#1a1405}
+.ammo button[aria-pressed="true"] .s,.ammo button[aria-pressed="true"] .k{color:#43330d}
+.fireBtn{position:relative;overflow:hidden;width:100%;border:0;border-radius:8px;background:var(--fire);color:#fff;padding:15px;font-size:20px;font-weight:700;letter-spacing:.12em;cursor:pointer;
+  box-shadow:0 2px 0 #5d1a0f}
+.fireBtn:hover{filter:brightness(1.1)}
+.fireBtn:active{transform:translateY(1px);box-shadow:none}
+.fireBtn .bar{position:absolute;inset:auto 0 0 0;height:4px;background:rgba(255,255,255,.75);transform-origin:left;transform:scaleX(0)}
+[dir=rtl] .fireBtn .bar{transform-origin:right}
+.fireBtn .lbl{position:relative}
+.fireBtn.loading{background:#4a2a22;color:#e8c9bf}
+.result{min-height:52px}
+.result .big{font-size:19px;font-weight:700;line-height:1.2}
+.result .big.hit{color:var(--ok)} .result .big.miss{color:var(--bad)}
+.result .sub{font-size:12.5px;color:var(--muted);margin-top:3px}
+.result .fix{font-size:13px;margin-top:5px}
+.score{display:flex;gap:6px;flex-wrap:wrap}
+.score span{background:var(--panel-2);border:1px solid var(--line);border-radius:4px;padding:3px 8px;font-size:12px;color:var(--muted)}
+.score b{color:var(--fg);font-family:var(--f-data);font-weight:600}
+.exGrid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.exGrid button{background:var(--panel-2);border:1px solid var(--line);border-radius:6px;padding:8px;cursor:pointer;font-weight:500;text-align:center}
+.exGrid button:hover{background:var(--panel-3)}
+.exGrid button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);background:#2a2516}
+.prompt{background:var(--housing);border:1px solid var(--line);border-inline-start:3px solid var(--accent);border-radius:4px;padding:8px 10px;font-size:13px}
+.card{background:var(--housing);border:1px solid var(--line);border-inline-start:4px solid var(--c);border-radius:4px;padding:10px 12px;display:flex;flex-direction:column;gap:5px}
+.card h3{margin:0;font-size:16px;font-weight:700;color:var(--c);display:flex;align-items:center;gap:8px}
+.card .badge{width:20px;height:20px;border-radius:50%;background:var(--c);color:#111;font-size:11.5px;display:inline-grid;place-items:center;font-weight:700;flex:none}
+.card p{margin:0;font-size:13px}
+.card .use{font-weight:600}
+.card .facts{font-family:var(--f-data);font-size:11.5px;color:var(--muted);line-height:1.5;direction:ltr;text-align:left}
+.legend{display:flex;flex-wrap:wrap;gap:6px}
+.legend button{display:flex;align-items:center;gap:6px;background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:3px 9px 3px 4px;cursor:pointer;font-size:12px}
+.legend button .badge{width:16px;height:16px;border-radius:50%;background:var(--c);color:#111;font-size:10px;display:inline-grid;place-items:center;font-weight:700}
+.legend button[aria-pressed="true"]{border-color:var(--c)}
+.steps{margin:0;padding-inline-start:18px;font-size:12.5px;display:flex;flex-direction:column;gap:3px}
+details.keysBox summary{cursor:pointer;font-size:13px;color:var(--muted);font-weight:600;list-style:none}
+details.keysBox summary::-webkit-details-marker{display:none}
+details.keysBox summary::before{content:"▸ "}
+details.keysBox[open] summary::before{content:"▾ "}
+.keys{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font-size:12.5px;margin-top:8px}
+.keys kbd{font-family:var(--f-data);font-size:11px;background:var(--panel-2);border:1px solid var(--line);border-radius:3px;padding:0 5px;justify-self:start;direction:ltr}
+.keys span{color:var(--muted)}
+.foot{margin-top:auto;padding:10px 16px;display:flex;justify-content:flex-end}
+.link{background:none;border:0;color:var(--muted);font-size:12px;cursor:pointer;text-decoration:underline;text-underline-offset:3px;padding:2px}
+
+/* developer drawer (English only, not part of the trainee view) */
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(460px,100%);background:var(--panel);border-left:1px solid var(--line);z-index:20;direction:ltr;
+  overflow:auto;transform:translateX(102%);transition:transform .22s ease;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);padding-right:env(safe-area-inset-right,0px)}
+.drawer.open{transform:none}
+.drawer header{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel);z-index:1}
+.drawer h2{font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0}
+.drawer header h2{color:var(--accent)}
+.drawer .sec{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
+.note{font-size:12px;color:var(--muted);margin:0}
+.toggles{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.tog{display:flex;align-items:center;gap:8px;background:var(--panel-2);border:1px solid var(--line);border-radius:4px;padding:7px 9px;cursor:pointer;text-align:left}
+.tog .dot{width:9px;height:9px;border-radius:50%;border:1px solid var(--muted);flex:none}
+.tog[aria-pressed="true"]{border-color:var(--accent)}
+.tog[aria-pressed="true"] .dot{background:var(--accent);border-color:var(--accent)}
+.tog .kbd{margin-left:auto;font-family:var(--f-data);font-size:10px;color:var(--muted)}
+table{border-collapse:collapse;width:100%;font-family:var(--f-data);font-size:11.5px;font-variant-numeric:tabular-nums}
+th,td{padding:4px 6px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th{color:var(--muted);font-weight:500;font-family:var(--f-ui);font-size:11px}
+th:first-child,td:first-child{text-align:left}
+.tbl{overflow-x:auto;max-height:260px;overflow-y:auto}
+td.fail{color:var(--bad)} td.pass{color:var(--ok)}
+.params{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.params label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--muted)}
+.params input{width:100%;background:var(--housing);border:1px solid var(--line);border-radius:4px;padding:6px 8px;font-family:var(--f-data)}
+.readout{font-family:var(--f-data);font-size:12px;color:var(--muted)}
+.readout b{color:var(--fg);font-weight:500}
+
+/* phone: fixed weapon bar */
+.mbar{display:none}
+@media (max-width:900px){
+  .app{grid-template-columns:minmax(0,1fr);height:auto;padding-bottom:132px}
+  .step.weapon,.step.fire{display:none}
+  .mbar{display:grid;position:fixed;left:0;right:0;bottom:0;z-index:10;gap:8px;background:rgba(12,15,13,.96);border-top:1px solid var(--line);
+    grid-template-columns:1fr 2fr;padding:10px max(16px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+  .mbar .ammo{grid-column:1/-1}
+  .mbar .ammo button{min-height:44px;padding:6px}
+  .mbar .ammo .s,.mbar .ammo .k{display:none}
+  .mbar #mExplain.active{border-color:var(--accent);color:var(--accent)}
+  .mbar .fireBtn{padding:11px;font-size:17px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="app">
+  <div class="sight-col">
+    <div class="sight-wrap" id="sightWrap">
+      <div class="sight" id="sight" tabindex="0" aria-label="Gunner's auxiliary sight. Drag to lay the gun, Space to fire.">
+        <canvas id="gl"></canvas>
+        <div class="blast" id="blast"></div>
+        <div class="mask"></div>
+        <canvas id="ov"></canvas>
+        <div class="ring"></div>
+        <div class="callout" id="callout"><div class="main" id="calloutMain"></div><div class="destroyed" id="calloutKill"></div></div>
+      </div>
+    </div>
+    <div class="statusbar"><span id="sbState" class="chip armed"></span><span class="chip armed" data-i18n="override"></span></div>
+  </div>
+
+  <aside class="panel" id="panel" aria-label="Trainer">
+    <div class="head">
+      <div class="top">
+        <div><h1 data-i18n="title"></h1><p data-i18n="subtitle"></p></div>
+        <div class="lang" role="group" aria-label="Language"><button data-lang="en" aria-pressed="true">EN</button><button data-lang="he" aria-pressed="false">עב</button></div>
+      </div>
+      <button class="explainBtn" id="tgExplain" aria-pressed="false"><span class="q">?</span><span data-i18n="explainBtn"></span><span class="kbd">E</span></button>
+    </div>
+
+    <div class="step" id="explainSec" hidden>
+      <div class="legend" id="legend"></div>
+      <div class="card" id="card" style="--c:var(--c-hesh)"></div>
+      <ol class="steps"><li data-i18n="st1"></li><li data-i18n="st2"></li><li data-i18n="st3"></li></ol>
+    </div>
+
+    <div class="step">
+      <h2><span class="num">1</span><span data-i18n="step1"></span></h2>
+      <p class="hint" data-i18n="step1hint"></p>
+      <div class="estRow">
+        <input type="number" id="estimate" min="100" max="5000" step="50" data-i18n-ph="estPh" aria-label="Range estimate in metres">
+        <button class="btn" id="btnCheck" data-i18n="check"></button>
+      </div>
+      <div class="estResult" id="estResult" hidden></div>
+    </div>
+
+    <div class="step weapon">
+      <h2><span class="num">2</span><span data-i18n="step2"></span></h2>
+      <div class="ammo" role="group" aria-label="Ammunition">
+        <button data-ammo="FIN" aria-pressed="false"><span class="n">FIN</span><span class="s" data-i18n="finSub"></span><span class="k">1</span></button>
+        <button data-ammo="HESH" aria-pressed="true"><span class="n">HESH</span><span class="s" data-i18n="heshSub"></span><span class="k">2</span></button>
+        <button data-ammo="COAX" aria-pressed="false"><span class="n">COAX</span><span class="s" data-i18n="coaxSub"></span><span class="k">3</span></button>
+      </div>
+    </div>
+
+    <div class="step fire">
+      <h2><span class="num">3</span><span data-i18n="step3"></span></h2>
+      <p class="hint" data-i18n="step3hint"></p>
+      <button class="fireBtn" data-fire><span class="bar"></span><span class="lbl"></span></button>
+    </div>
+
+    <div class="step">
+      <div class="result" id="result"></div>
+      <div class="score" id="score"></div>
+    </div>
+
+    <div class="step">
+      <h2 data-i18n="exercise"></h2>
+      <div class="exGrid" id="exGrid">
+        <button data-ex="range" aria-pressed="true" data-i18n="ex_range"></button>
+        <button data-ex="estimate" aria-pressed="false" data-i18n="ex_estimate"></button>
+        <button data-ex="stationary" aria-pressed="false" data-i18n="ex_stationary"></button>
+        <button data-ex="moving" aria-pressed="false" data-i18n="ex_moving"></button>
+      </div>
+      <div class="prompt" id="prompt"></div>
+      <button class="btn" id="btnNext" data-i18n="next"></button>
+    </div>
+
+    <div class="step">
+      <details class="keysBox"><summary data-i18n="controls"></summary>
+        <div class="keys">
+          <kbd>Drag</kbd><span data-i18n="k_drag"></span>
+          <kbd>← ↑ → ↓</kbd><span data-i18n="k_arrows"></span>
+          <kbd>Wheel</kbd><span data-i18n="k_wheel"></span>
+          <kbd>1 2 3</kbd><span>FIN · HESH · COAX</span>
+          <kbd>Space</kbd><span data-i18n="k_space"></span>
+          <kbd>E</kbd><span data-i18n="explainBtn"></span>
+          <kbd>N</kbd><span data-i18n="next"></span>
+        </div>
+      </details>
+    </div>
+
+    <div class="foot"><button class="link" id="btnDev" data-i18n="devTools"></button></div>
+  </aside>
+</div>
+
+<!-- phone weapon bar -->
+<div class="mbar" aria-label="Weapon controls">
+  <div class="ammo" role="group" aria-label="Ammunition">
+    <button data-ammo="FIN" aria-pressed="false"><span class="n">FIN</span></button>
+    <button data-ammo="HESH" aria-pressed="true"><span class="n">HESH</span></button>
+    <button data-ammo="COAX" aria-pressed="false"><span class="n">COAX</span></button>
+  </div>
+  <button class="btn" id="mExplain">?</button>
+  <button class="fireBtn" data-fire><span class="bar"></span><span class="lbl"></span></button>
+</div>
+
+<!-- developer drawer -->
+<aside class="drawer" id="drawer" aria-label="Developer tools" aria-hidden="true">
+  <header><h2>Developer tools</h2><button class="btn" id="btnDevClose">Close</button></header>
+  <div class="sec">
+    <h2>Views</h2>
+    <div class="toggles">
+      <button class="tog" id="tgDev" aria-pressed="false"><span class="dot"></span>Dev overlay<span class="kbd">G</span></button>
+      <button class="tog" id="tgZoom" aria-pressed="false"><span class="dot"></span>Dev zoom ×3<span class="kbd">Z</span></button>
+      <button class="tog" id="tgDisp" aria-pressed="true"><span class="dot"></span>Dispersion</button>
+      <button class="tog" id="tgVib" aria-pressed="true"><span class="dot"></span>Hull vibration</button>
+      <button class="tog" id="tgBlast" aria-pressed="true"><span class="dot"></span>Firing obscuration</button>
+      <button class="tog" id="tgModel" aria-pressed="false"><span class="dot"></span>Fly the physics model</button>
+    </div>
+    <p class="note">Trainees fly reticle-true ballistics: laying the correct mark hits. “Fly the physics model” fires the spec 6.1 model instead, so its disagreement with the reticle shows as misses.</p>
+    <div class="readout">TRAV <b id="rAz">0.0</b> mrad · ELEV <b id="rEl">0.0</b> mrad · ballistics <b id="rMode">reticle</b></div>
+  </div>
+  <div class="sec">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><h2>Engagements · GAS-13</h2><button class="btn" id="btnCopy">Copy shot log CSV</button></div>
+    <div class="tbl"><table id="engTbl"><thead><tr><th>#</th><th>Target</th><th>True m</th><th>Est. m</th><th>Rds</th><th>1st rd s</th><th>Hit s</th></tr></thead><tbody></tbody></table></div>
+    <p class="note" id="copyNote">An engagement starts when a round lands within 15 mrad of a target.</p>
+  </div>
+  <div class="sec">
+    <h2>Ballistic verification · spec 6.1</h2>
+    <p class="note">Reticle Y = booklet values (not adjusted). Model Y = elevation the spec 6.1 model needs to hit. A miss over 0.1 mrad fails GAS-05.</p>
+    <div class="tbl" style="max-height:none"><table id="balTbl"><thead><tr><th>Round</th><th>Range</th><th>Reticle Y</th><th>Model Y</th><th>Model/Reticle</th><th>Miss mrad</th><th>Miss m</th></tr></thead><tbody></tbody></table></div>
+    <div class="params">
+      <label>FIN muzzle velocity (m/s)<input type="number" id="pFinV" step="5"></label>
+      <label>FIN velocity loss (m/s per km)<input type="number" id="pFinL" step="1"></label>
+      <label>HESH muzzle velocity (m/s)<input type="number" id="pHeshV" step="5"></label>
+      <label>HESH G1 coefficient (kg/m²)<input type="number" id="pHeshBC" step="10"></label>
+      <label>HESH drift k<input type="number" id="pHeshK" step="0.01"></label>
+      <label>Coax muzzle velocity (m/s)<input type="number" id="pCoaxV" step="5"></label>
+      <label>Coax G1 coefficient (kg/m²)<input type="number" id="pCoaxBC" step="5"></label>
+      <div style="display:flex;align-items:flex-end"><button class="btn" id="btnReset">Reset to spec values</button></div>
+    </div>
+    <p class="note">Model defaults: spec 6.1 (point mass, ISA, no wind, no jump). HESH L31 670 m/s; FIN 1,650 m/s, 60 m/s loss per km; coax 7.62 mm assumed. Range-estimator reference height implied by the booklet stadia: <b id="hRef"></b> m (target boards are built to it).</p>
+  </div>
+</aside>
+
+<script type="text/plain" id="reticleCsv">layer,item,range_m,side,prim,text,x1,y1,x2,y2,r
+Zero,zero circle,,C,circle,,0.00,0.00,,,0.59
+Zero,zero circle,,C,dot,,0.00,0.00,,,
+Stadia,base line,,C,line,,4.52,-0.04,18.43,-0.04,
+Stadia,range dash,600,C,line,,4.65,-3.86,6.25,-3.86,
+Stadia,range dash,800,C,line,,6.38,-2.87,7.98,-2.87,
+Stadia,range dash,1000,C,line,,8.05,-2.30,9.71,-2.30,
+Stadia,range dash,1200,C,line,,9.78,-1.89,11.38,-1.89,
+Stadia,range dash,1400,C,line,,11.51,-1.63,13.18,-1.63,
+Stadia,range dash,1600,C,line,,13.24,-1.43,14.84,-1.43,
+Stadia,range dash,1800,C,line,,14.91,-1.27,16.56,-1.27,
+Stadia,range dash,2000,C,line,,16.64,-1.16,18.29,-1.16,
+Coax,range line,200,C,line,,-20.63,1.84,-18.16,1.84,
+Coax,range line,300,C,line,,-20.68,2.92,-18.16,2.92,
+Coax,range line,400,C,line,,-20.68,4.16,-18.16,4.16,
+Coax,range line,500,C,line,,-20.63,5.49,-18.16,5.49,
+Coax,range line,600,C,line,,-20.68,7.12,-18.16,7.12,
+Coax,range line,700,C,line,,-20.68,8.84,-18.16,8.84,
+Coax,range line,800,C,line,,-20.68,10.90,-18.16,10.90,
+Coax,range line,900,C,line,,-20.68,13.27,-18.16,13.27,
+Coax,range line,1000,C,line,,-20.63,15.87,-18.16,15.87,
+Coax,range line,1100,C,line,,-20.68,18.90,-18.16,18.90,
+Coax,range line,1200,C,line,,-20.68,22.45,-18.16,22.45,
+Coax,range line,1300,C,line,,-20.63,26.34,-18.16,26.34,
+Coax,range line,1400,C,line,,-20.68,30.90,-18.16,30.90,
+Coax,range line,1500,C,line,,-20.68,36.32,-18.16,36.32,
+Coax,range line,1600,C,line,,-20.63,42.28,-18.16,42.28,
+Coax,range line,1700,C,line,,-20.68,49.23,-18.16,49.23,
+Coax,range line,1800,C,line,,-20.63,57.28,-18.16,57.28,
+FIN,aim point,800,C,line,,-1.27,1.90,-0.46,1.90,
+FIN,aim point,800,C,line,,0.53,1.90,1.33,1.90,
+FIN,aim point,1200,C,line,,-0.33,2.89,0.40,2.89,
+FIN,aim point,1600,C,line,,-1.27,3.86,-0.46,3.86,
+FIN,aim point,1600,C,line,,0.53,3.86,1.27,3.86,
+FIN,aim point,2000,C,line,,-0.40,4.86,0.46,4.86,
+FIN,aim point,2400,C,line,,-1.27,5.89,-0.46,5.89,
+FIN,aim point,2400,C,line,,0.53,5.89,1.27,5.89,
+FIN,line dot,600,C,dot,,0.04,1.53,,,
+FIN,line dot,1000,C,dot,,0.04,2.39,,,
+FIN,line dot,1400,C,dot,,0.04,3.40,,,
+FIN,line dot,1800,C,dot,,0.04,4.32,,,
+FIN,line dot,2200,C,dot,,0.04,5.32,,,
+HESH,aim point,600,C,line,,-0.26,8.52,1.14,8.52,
+HESH,aim point,600,C,line,,0.44,7.89,0.44,9.15,
+HESH,aim point,800,C,line,,-0.13,11.78,1.14,11.78,
+HESH,aim point,800,C,line,,0.50,11.12,0.50,12.45,
+HESH,aim point,1000,C,line,,0.00,15.10,1.27,15.10,
+HESH,aim point,1000,C,line,,0.63,14.43,0.63,15.77,
+HESH,aim point,1200,C,line,,0.24,18.83,1.56,18.83,
+HESH,aim point,1200,C,line,,0.90,18.16,0.90,19.49,
+HESH,aim point,1400,C,line,,0.37,22.75,1.69,22.75,
+HESH,aim point,1400,C,line,,1.03,22.08,1.03,23.42,
+HESH,aim point,1600,C,line,,0.60,27.08,1.86,27.08,
+HESH,aim point,1600,C,line,,1.23,26.38,1.23,27.78,
+HESH,aim point,1800,C,line,,0.77,31.60,2.10,31.60,
+HESH,aim point,1800,C,line,,1.43,30.90,1.43,32.30,
+HESH,aim point,2000,C,line,,0.96,36.59,2.43,36.59,
+HESH,aim point,2000,C,line,,1.69,35.83,1.69,37.35,
+HESH,aim point,2200,C,line,,1.03,41.91,2.76,41.91,
+HESH,aim point,2200,C,line,,1.89,41.08,1.89,42.74,
+HESH,aim point,2400,C,line,,1.23,47.43,3.09,47.43,
+HESH,aim point,2400,C,line,,2.17,46.46,2.17,48.39,
+HESH,aim point,2600,C,line,,1.36,53.69,3.49,53.69,
+HESH,aim point,2600,C,line,,2.43,52.66,2.43,54.72,
+HESH,aim point,2800,C,line,,1.49,60.27,3.90,60.27,
+HESH,aim point,2800,C,line,,2.70,59.10,2.70,61.44,
+HESH,aim point,3000,C,line,,1.76,67.19,4.29,67.19,
+HESH,aim point,3000,C,line,,3.03,65.89,3.03,68.48,
+HESH,aim point,3200,C,line,,1.93,74.91,4.80,74.91,
+HESH,aim point,3200,C,line,,3.36,73.48,3.36,76.34,
+HESH,aim point,500,C,circle,,0.33,7.06,,,0.59
+HESH,aim point,700,C,circle,,0.50,10.18,,,0.60
+HESH,aim point,900,C,circle,,0.63,13.47,,,0.59
+HESH,aim point,1100,C,circle,,0.79,17.00,,,0.57
+HESH,aim point,1300,C,circle,,0.96,20.92,,,0.59
+HESH,aim point,1500,C,circle,,1.16,25.04,,,0.59
+HESH,aim point,1500,C,dot,,1.16,25.04,,,
+HESH,aim point,1700,C,circle,,1.33,29.37,,,0.58
+HESH,aim point,1700,C,dot,,1.33,29.37,,,
+HESH,aim point,1900,C,circle,,1.56,34.12,,,0.60
+HESH,aim point,1900,C,dot,,1.56,34.12,,,
+HESH,aim point,2100,C,circle,,1.80,39.15,,,0.64
+HESH,aim point,2100,C,dot,,1.80,39.15,,,
+HESH,aim point,2300,C,circle,,2.02,44.60,,,0.66
+HESH,aim point,2300,C,dot,,2.02,44.60,,,
+HESH,aim point,2500,C,circle,,2.26,50.46,,,0.78
+HESH,aim point,2500,C,dot,,2.26,50.46,,,
+HESH,aim point,2700,C,circle,,2.56,56.88,,,0.88
+HESH,aim point,2700,C,dot,,2.56,56.88,,,
+HESH,aim point,2900,C,circle,,2.76,63.66,,,0.86
+HESH,aim point,2900,C,dot,,2.76,63.66,,,
+HESH,aim point,3100,C,circle,,3.20,70.94,,,0.91
+HESH,aim point,3100,C,dot,,3.20,70.94,,,
+HESH,line dot,,C,dot,,1.10,23.82,,,
+HESH,line dot,,C,dot,,1.16,26.08,,,
+HESH,line dot,,C,dot,,1.30,28.14,,,
+HESH,line dot,,C,dot,,1.36,30.46,,,
+HESH,line dot,,C,dot,,1.63,35.39,,,
+HESH,line dot,,C,dot,,1.69,37.92,,,
+HESH,line dot,,C,dot,,1.84,40.65,,,
+HESH,line dot,,C,dot,,1.97,43.31,,,
+HESH,line dot,,C,dot,,2.10,46.10,,,
+HESH,line dot,,C,dot,,2.23,49.03,,,
+HESH,line dot,,C,dot,,2.36,52.15,,,
+HESH,line dot,,C,dot,,2.50,55.15,,,
+HESH,line dot,,C,dot,,2.63,58.54,,,
+HESH,line dot,,C,dot,,2.83,62.06,,,
+HESH,line dot,,C,dot,,2.96,65.46,,,
+HESH,line dot,,C,dot,,3.09,69.18,,,
+HESH,line dot,,C,dot,,3.23,72.91,,,
+Unknown,cross,,C,line,,-0.57,80.43,0.63,80.43,
+Unknown,cross,,C,line,,0.04,79.69,0.04,81.16,
+Lead,FIN dash,800,L,line,,-11.05,1.89,-8.64,1.89,
+Lead,FIN dash,800,L,line,,-6.65,1.89,-4.26,1.89,
+Lead,FIN dash,800,R,line,,4.26,1.89,6.71,1.89,
+Lead,FIN dash,800,R,line,,8.64,1.89,11.11,1.89,
+Lead,FIN dash,1600,L,line,,-11.05,3.82,-8.58,3.82,
+Lead,FIN dash,1600,L,line,,-6.65,3.82,-4.19,3.82,
+Lead,FIN dash,1600,R,line,,4.26,3.86,6.65,3.86,
+Lead,FIN dash,1600,R,line,,8.71,3.86,11.11,3.86,
+Lead,FIN dot,1200,L,dot,,-10.94,2.87,,,
+Lead,FIN dot,1200,L,dot,,-8.75,2.87,,,
+Lead,FIN dot,1200,L,dot,,-6.55,2.87,,,
+Lead,FIN dot,1200,L,dot,,-4.43,2.87,,,
+Lead,FIN dot,1200,R,dot,,4.43,2.87,,,
+Lead,FIN dot,1200,R,dot,,6.62,2.87,,,
+Lead,FIN dot,1200,R,dot,,8.75,2.87,,,
+Lead,FIN dot,1200,R,dot,,10.94,2.87,,,
+Lead,FIN dot,2000,L,dot,,-10.94,4.85,,,
+Lead,FIN dot,2000,L,dot,,-8.75,4.85,,,
+Lead,FIN dot,2000,L,dot,,-6.55,4.85,,,
+Lead,FIN dot,2000,L,dot,,-4.43,4.85,,,
+Lead,FIN dot,2000,R,dot,,4.43,4.85,,,
+Lead,FIN dot,2000,R,dot,,6.62,4.85,,,
+Lead,FIN dot,2000,R,dot,,8.75,4.85,,,
+Lead,FIN dot,2000,R,dot,,10.94,4.85,,,
+Lead,dash,500,L,line,,-8.25,7.02,-6.91,7.02,
+Lead,dash,500,L,line,,-2.59,7.02,-1.27,7.02,
+Lead,dash,500,R,line,,2.00,7.02,3.33,7.02,
+Lead,dash,500,R,line,,7.65,7.02,8.99,7.02,
+Lead,dash,600,R,line,,7.72,8.48,9.65,8.48,
+Lead,dash,600,L,line,,-8.84,8.51,-6.91,8.51,
+Lead,tick ├,600,L,line,,-2.92,8.51,-2.13,8.51,
+Lead,tick ├,600,L,line,,-2.79,7.81,-2.79,9.21,
+Lead,tick ┤,600,R,line,,2.92,8.51,3.79,8.51,
+Lead,tick ┤,600,R,line,,3.66,7.81,3.66,9.21,
+Lead,dash,700,L,line,,-8.38,10.15,-7.06,10.15,
+Lead,dash,700,L,line,,-3.26,10.15,-1.93,10.15,
+Lead,dash,700,R,line,,2.92,10.15,4.19,10.15,
+Lead,dash,700,R,line,,7.98,10.15,9.32,10.15,
+Lead,dash,800,L,line,,-8.99,11.80,-7.06,11.80,
+Lead,tick ├,800,L,line,,-3.66,11.80,-2.92,11.80,
+Lead,tick ├,800,L,line,,-3.56,11.14,-3.56,12.48,
+Lead,tick ┤,800,R,line,,3.99,11.80,4.80,11.80,
+Lead,tick ┤,800,R,line,,4.65,11.14,4.65,12.48,
+Lead,dash,800,R,line,,8.11,11.80,10.04,11.80,
+Lead,dash,900,L,line,,-8.38,13.44,-7.06,13.44,
+Lead,dash,900,L,line,,-4.06,13.47,-2.66,13.47,
+Lead,dash,900,R,line,,3.99,13.47,5.32,13.47,
+Lead,dash,900,R,line,,8.31,13.47,9.65,13.47,
+Lead,dash,1000,L,line,,-8.99,15.13,-7.06,15.13,
+Lead,tick ├,1000,L,line,,-4.45,15.13,-3.59,15.13,
+Lead,tick ├,1000,L,line,,-4.32,14.47,-4.32,15.79,
+Lead,tick ├,1000,L,line,,-2.53,15.13,-1.73,15.13,
+Lead,tick ├,1000,L,line,,-2.39,14.47,-2.39,15.79,
+Lead,tick ┤,1000,R,line,,3.13,15.13,3.93,15.13,
+Lead,tick ┤,1000,R,line,,3.79,14.47,3.79,15.79,
+Lead,tick ┤,1000,R,line,,5.06,15.13,5.85,15.13,
+Lead,tick ┤,1000,R,line,,5.75,14.47,5.75,15.79,
+Lead,dash,1000,R,line,,8.45,15.13,10.38,15.13,
+Lead,dash,1100,L,line,,-8.45,17.03,-7.06,17.03,
+Lead,dash,1100,L,line,,-4.85,17.03,-3.46,17.03,
+Lead,dash,1100,L,line,,-2.72,17.03,-1.33,17.03,
+Lead,dash,1100,R,line,,8.64,17.03,10.04,17.03,
+Lead,dash,1100,R,line,,2.87,17.06,4.26,17.06,
+Lead,dash,1100,R,line,,5.06,17.06,6.45,17.06,
+Lead,dash,1200,L,line,,-8.99,18.86,-7.12,18.86,
+Lead,tick ├,1200,L,line,,-5.32,18.86,-4.52,18.86,
+Lead,tick ├,1200,L,line,,-5.19,18.20,-5.19,19.52,
+Lead,tick ├,1200,L,line,,-2.87,18.86,-2.06,18.86,
+Lead,tick ├,1200,L,line,,-2.72,18.20,-2.72,19.60,
+Lead,tick ┤,1200,R,line,,3.79,18.86,4.59,18.86,
+Lead,tick ┤,1200,R,line,,4.49,18.13,4.49,19.60,
+Lead,tick ┤,1200,R,line,,6.32,18.86,7.06,18.86,
+Lead,tick ┤,1200,R,line,,6.95,18.20,6.95,19.60,
+Lead,dash,1200,R,line,,8.84,18.86,10.77,18.86,
+Lead,dash,1300,L,line,,-5.79,20.89,-4.45,20.89,
+Lead,dash,1300,L,line,,-3.05,20.89,-1.66,20.89,
+Lead,dash,1300,R,line,,3.59,20.89,4.98,20.89,
+Lead,dash,1300,R,line,,6.38,20.89,7.78,20.89,
+Lead,dash,1300,R,line,,9.05,20.89,10.44,20.89,
+Lead,dash,1300,L,line,,-8.51,20.92,-7.12,20.92,
+Lead,dash,1400,L,line,,-9.05,22.82,-7.12,22.82,
+Lead,tick ├,1400,L,line,,-6.25,22.82,-5.46,22.82,
+Lead,tick ├,1400,L,line,,-6.12,22.12,-6.12,23.45,
+Lead,tick ├,1400,L,line,,-3.26,22.82,-2.46,22.82,
+Lead,tick ├,1400,L,line,,-3.13,22.12,-3.13,23.45,
+Lead,tick ┤,1400,R,line,,4.52,22.82,5.32,22.82,
+Lead,tick ┤,1400,R,line,,5.19,22.12,5.19,23.45,
+Lead,tick ┤,1400,R,line,,7.52,22.82,8.38,22.82,
+Lead,tick ┤,1400,R,line,,8.25,22.12,8.25,23.51,
+Lead,dash,1400,R,line,,9.18,22.82,11.18,22.82,
+Lead,dash,1500,L,line,,-8.51,25.02,-7.19,25.02,
+Lead,dash,1500,R,line,,4.39,25.02,5.79,25.02,
+Lead,dash,1500,L,line,,-6.86,25.04,-5.46,25.04,
+Lead,dash,1500,L,line,,-3.46,25.04,-2.13,25.04,
+Lead,dash,1500,R,line,,7.72,25.04,9.12,25.04,
+Lead,dash,1500,R,line,,9.45,25.04,10.85,25.04,
+Lead,plus,1600,L,line,,-9.12,27.11,-6.58,27.11,
+Lead,plus,1600,L,line,,-7.22,26.38,-7.22,27.78,
+Lead,tick ├,1600,L,line,,-3.73,27.11,-2.92,27.11,
+Lead,tick ├,1600,L,line,,-3.56,26.44,-3.56,27.78,
+Lead,tick ┤,1600,R,line,,5.39,27.11,6.12,27.11,
+Lead,tick ┤,1600,R,line,,6.01,26.44,6.01,27.78,
+Lead,plus,1600,R,line,,9.05,27.11,11.58,27.11,
+Lead,plus,1600,R,line,,9.74,26.38,9.74,27.78,
+Lead,dash,1700,L,line,,-8.58,29.40,-6.52,29.40,
+Lead,dash,1700,L,line,,-3.93,29.40,-2.53,29.40,
+Lead,dash,1700,R,line,,5.26,29.40,6.58,29.40,
+Lead,dash,1700,R,line,,9.25,29.40,11.31,29.40,
+Lead,plus,1800,L,line,,-9.12,31.70,-7.25,31.70,
+Lead,plus,1800,L,line,,-8.38,30.97,-8.38,32.30,
+Lead,tick ├,1800,L,line,,-4.19,31.70,-3.40,31.70,
+Lead,tick ├,1800,L,line,,-4.06,30.97,-4.06,32.30,
+Lead,tick ┤,1800,R,line,,6.25,31.70,7.06,31.70,
+Lead,tick ┤,1800,R,line,,6.95,30.97,6.95,32.37,
+Lead,plus,1800,R,line,,10.11,31.70,12.04,31.70,
+Lead,plus,1800,R,line,,11.27,30.97,11.27,32.37,
+Lead,dash,1900,R,line,,10.90,34.10,12.30,34.10,
+Lead,dash,1900,L,line,,-9.18,34.12,-7.85,34.12,
+Lead,dash,1900,L,line,,-4.39,34.12,-3.13,34.12,
+Lead,dash,1900,R,line,,6.12,34.16,7.52,34.16,
+Lead,tick ├,2000,L,line,,-4.72,36.62,-3.86,36.62,
+Lead,tick ├,2000,L,line,,-4.59,35.96,-4.59,37.35,
+Lead,tick ├,2000,L,line,,-9.85,36.66,-8.99,36.66,
+Lead,tick ├,2000,L,line,,-9.71,35.83,-9.71,37.43,
+Lead,tick ┤,2000,R,line,,7.19,36.66,8.05,36.66,
+Lead,tick ┤,2000,R,line,,7.94,35.89,7.94,37.43,
+Lead,tick ┤,2000,R,line,,12.37,36.66,13.18,36.66,
+Lead,tick ┤,2000,R,line,,13.04,35.89,13.04,37.35,
+Lead,dash,2100,L,line,,-10.44,39.15,-9.18,39.15,
+Lead,dash,2100,L,line,,-4.93,39.15,-3.59,39.15,
+Lead,dash,2100,R,line,,7.19,39.15,8.45,39.15,
+Lead,dash,2100,R,line,,12.70,39.15,14.04,39.15,
+Lead,tick ├,2200,L,line,,-11.25,41.84,-10.44,41.84,
+Lead,tick ├,2200,L,line,,-11.14,41.01,-11.14,42.67,
+Lead,tick ├,2200,L,line,,-5.32,41.84,-4.45,41.84,
+Lead,tick ├,2200,L,line,,-5.19,41.01,-5.19,42.67,
+Lead,tick ┤,2200,R,line,,8.31,41.84,9.05,41.84,
+Lead,tick ┤,2200,R,line,,8.95,40.88,8.95,42.67,
+Lead,tick ┤,2200,R,line,,14.23,41.84,15.04,41.84,
+Lead,tick ┤,2200,R,line,,14.91,41.01,14.91,42.61,
+Lead,dash,2300,L,line,,-12.04,44.58,-10.57,44.58,
+Lead,dash,2300,L,line,,-5.59,44.58,-4.26,44.58,
+Lead,dash,2300,R,line,,8.31,44.58,9.65,44.58,
+Lead,dash,2300,R,line,,14.63,44.58,16.03,44.58,
+Lead,tick ┤,2400,R,line,,9.51,47.50,10.24,47.50,
+Lead,tick ┤,2400,R,line,,10.15,46.53,10.15,48.46,
+Lead,tick ├,2400,L,line,,-12.78,47.54,-12.04,47.54,
+Lead,tick ├,2400,L,line,,-12.65,46.53,-12.65,48.46,
+Lead,tick ├,2400,L,line,,-5.99,47.54,-5.13,47.54,
+Lead,tick ├,2400,L,line,,-5.83,46.53,-5.83,48.46,
+Lead,tick ┤,2400,R,line,,16.03,47.54,16.77,47.54,
+Lead,tick ┤,2400,R,line,,16.69,46.53,16.69,48.46,
+Lead,dash,2500,R,line,,16.90,50.46,18.16,50.46,
+Lead,dash,2500,L,line,,-13.57,50.50,-12.30,50.50,
+Lead,dash,2500,L,line,,-6.25,50.50,-4.98,50.50,
+Lead,dash,2500,R,line,,9.45,50.52,10.90,50.52,
+Lead,tick ├,2600,L,line,,-14.50,53.68,-13.84,53.68,
+Lead,tick ├,2600,L,line,,-14.40,52.65,-14.40,54.71,
+Lead,tick ├,2600,L,line,,-6.65,53.68,-5.92,53.68,
+Lead,tick ├,2600,L,line,,-6.55,52.59,-6.55,54.78,
+Lead,tick ┤,2600,R,line,,10.77,53.68,11.51,53.68,
+Lead,tick ┤,2600,R,line,,11.41,52.65,11.41,54.78,
+Lead,tick ┤,2600,R,line,,18.70,53.68,19.36,53.68,
+Lead,tick ┤,2600,R,line,,19.26,52.59,19.26,54.71,
+Lead,dash,2700,L,line,,-15.37,56.84,-14.10,56.84,
+Lead,dash,2700,L,line,,-6.99,56.88,-5.72,56.88,
+Lead,dash,2700,R,line,,10.90,56.88,12.17,56.88,
+Lead,dash,2700,R,line,,19.23,56.88,20.49,56.88,
+Lead,tick ├,2800,L,line,,-16.43,60.24,-15.63,60.24,
+Lead,tick ├,2800,L,line,,-16.33,59.10,-16.33,61.37,
+Lead,tick ┤,2800,R,line,,12.17,60.24,12.91,60.24,
+Lead,tick ┤,2800,R,line,,12.83,59.10,12.83,61.37,
+Lead,tick ├,2800,L,line,,-7.45,60.28,-6.71,60.28,
+Lead,tick ├,2800,L,line,,-7.35,59.10,-7.35,61.37,
+Lead,tick ┤,2800,R,line,,21.09,60.28,21.89,60.28,
+Lead,tick ┤,2800,R,line,,21.75,59.05,21.75,61.44,
+Lead,dash,2900,L,line,,-17.43,63.73,-15.96,63.73,
+Lead,dash,2900,L,line,,-7.98,63.73,-6.52,63.73,
+Lead,dash,2900,R,line,,12.30,63.73,13.64,63.73,
+Lead,dash,2900,R,line,,21.82,63.73,23.22,63.73,
+Lead,tick ┤,3000,R,line,,23.75,67.23,24.54,67.23,
+Lead,tick ┤,3000,R,line,,24.45,65.89,24.45,68.55,
+Lead,tick ├,3000,L,line,,-18.42,67.26,-17.63,67.26,
+Lead,tick ├,3000,L,line,,-18.36,65.96,-18.36,68.48,
+Lead,tick ├,3000,L,line,,-8.31,67.26,-7.65,67.26,
+Lead,tick ├,3000,L,line,,-8.22,65.89,-8.22,68.55,
+Lead,tick ┤,3000,R,line,,13.64,67.26,14.37,67.26,
+Lead,tick ┤,3000,R,line,,14.30,65.96,14.30,68.48,
+Lead,dash,3100,L,line,,-19.49,70.94,-18.16,70.94,
+Lead,dash,3100,L,line,,-8.79,70.94,-7.39,70.94,
+Lead,dash,3100,R,line,,13.90,70.94,15.17,70.94,
+Lead,dash,3100,R,line,,24.62,70.98,25.94,70.98,
+Lead,tick ├,3200,L,line,,-20.68,74.88,-19.96,74.88,
+Lead,tick ├,3200,L,line,,-20.63,73.48,-20.63,76.40,
+Lead,tick ├,3200,L,line,,-9.32,74.88,-8.58,74.88,
+Lead,tick ├,3200,L,line,,-9.21,73.48,-9.21,76.27,
+Lead,tick ┤,3200,R,line,,15.37,74.88,16.03,74.88,
+Lead,tick ┤,3200,R,line,,15.96,73.48,15.96,76.27,
+Lead,tick ┤,3200,R,line,,26.68,74.88,27.41,74.88,
+Lead,tick ┤,3200,R,line,,27.34,73.41,27.34,76.27,
+Coax,label,,C,textbox,COAX,-21.22,-1.76,-17.63,-0.57,
+Coax,label,200,L,textbox,2,-23.55,1.23,-22.82,2.36,
+Coax,label,400,L,textbox,4,-23.55,3.56,-22.82,4.69,
+Coax,label,600,L,textbox,6,-23.62,6.42,-22.76,7.68,
+Coax,label,800,L,textbox,8,-23.62,10.28,-22.82,11.47,
+Coax,label,900,L,textbox,9,-23.62,12.61,-22.82,13.81,
+Coax,label,1000,L,textbox,10,-24.34,15.27,-22.89,16.47,
+Coax,label,1100,L,textbox,11,-24.34,18.33,-23.09,19.52,
+Coax,label,1200,L,textbox,12,-24.34,21.79,-22.89,22.98,
+Coax,label,1300,L,textbox,13,-24.34,25.72,-22.89,26.91,
+Coax,label,1400,L,textbox,14,-24.34,30.30,-22.89,31.49,
+Coax,label,1500,L,textbox,15,-24.34,35.63,-22.89,36.89,
+Coax,label,1600,L,textbox,16,-24.34,41.68,-22.89,42.87,
+Coax,label,1700,L,textbox,17,-24.34,48.66,-22.89,49.86,
+Coax,label,1800,L,textbox,18,-24.34,56.71,-22.89,57.84,
+Stadia,label,800,C,textbox,8,6.86,-4.16,7.45,-3.36,
+Stadia,label,1200,C,textbox,12,10.04,-3.23,11.18,-2.36,
+Stadia,label,1600,C,textbox,16,13.44,-2.76,14.57,-1.89,
+Stadia,label,2000,C,textbox,20,16.90,-2.50,17.89,-1.63,
+FIN,label,800,C,textbox,8,-2.26,1.43,-1.66,2.30,
+FIN,label,1200,C,textbox,12,0.73,2.43,1.86,3.36,
+FIN,label,1600,C,textbox,16,-2.72,3.36,-1.60,4.23,
+FIN,label,2000,C,textbox,20,0.73,4.36,1.86,5.22,
+FIN,label,2400,C,textbox,24,-2.72,5.42,-1.60,6.36,
+HESH,label,400,L,textbox,4,-11.31,4.96,-10.64,6.09,
+HESH,label,400,R,textbox,4,11.11,4.96,11.84,6.09,
+HESH,label,600,L,textbox,6,-11.44,7.89,-10.77,9.08,
+HESH,label,600,R,textbox,6,11.51,7.89,12.24,9.08,
+HESH,label,800,L,textbox,8,-11.78,11.21,-10.98,12.41,
+HESH,label,800,R,textbox,8,12.04,11.21,12.78,12.41,
+HESH,label,1000,L,textbox,10,-12.83,14.34,-11.11,15.79,
+HESH,label,1000,R,textbox,10,12.50,14.34,14.23,15.74,
+HESH,label,1200,L,textbox,12,-12.78,18.26,-11.31,19.39,
+HESH,label,1200,R,textbox,12,12.98,18.26,14.50,19.39,
+HESH,label,1400,L,textbox,14,-12.98,22.19,-11.44,23.38,
+HESH,label,1400,R,textbox,14,13.51,22.19,14.97,23.38,
+HESH,label,1600,L,textbox,16,-13.18,26.51,-11.64,27.65,
+HESH,label,1600,R,textbox,16,14.10,26.44,15.57,27.65,
+HESH,label,1800,L,textbox,18,-13.31,31.10,-11.71,32.23,
+HESH,label,1800,R,textbox,18,14.63,31.10,16.16,32.23,
+HESH,label,2000,L,textbox,20,-13.77,35.89,-11.91,37.22,
+HESH,label,2000,R,textbox,20,15.10,35.89,16.97,37.22,
+HESH,label,2200,L,textbox,22,-13.57,41.21,-12.04,42.48,
+HESH,label,2200,R,textbox,22,15.83,41.21,17.36,42.41,
+HESH,label,2400,L,textbox,24,-13.70,46.93,-12.24,48.07,
+HESH,label,2400,R,textbox,24,16.49,46.93,17.89,48.07,
+HESH,label,2600,L,textbox,26,-13.77,53.05,-12.30,54.25,
+HESH,label,2600,R,textbox,26,17.17,53.05,18.62,54.25,
+HESH,label,2800,L,textbox,28,-13.90,59.64,-12.44,60.77,
+HESH,label,2800,R,textbox,28,17.89,59.64,19.36,60.77,
+HESH,label,3000,L,textbox,30,-14.37,66.42,-12.57,67.82,
+HESH,label,3000,R,textbox,30,18.57,66.42,20.35,67.82,
+HESH,label,3200,L,textbox,32,-14.17,74.34,-12.70,75.47,
+HESH,label,3200,R,textbox,32,19.36,74.34,20.83,75.47,</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+"use strict";
+/* =====================================================================
+   GAS Gunnery Trainer
+   Reticle: booklet geometry, mrad, origin = centre of the top circle, x right +, y down +.
+   The sight frame is the gun bore frame (slaved, unstabilised).
+   World: metres, y up, gun at origin facing -z at azimuth 0, azimuth + = right.
+   ===================================================================== */
+
+// ---------------------------------------------------------------- language
+const STR = {
+  en: {
+    title: 'GAS Gunnery Trainer', subtitle: 'Challenger 2 emergency sight · ×8 fixed · slaved to the gun, not stabilised',
+    override: 'MAN OVRD', explainBtn: 'Explain the sight',
+    st1: 'Estimate range: fit the target in the range estimator.', st2: 'Pick your scale: FIN or HESH for the main gun, COAX for the MG.', st3: 'Aim and fire: centre column if still; lead marks if moving.',
+    step1: 'Estimate range', step1hint: 'Tank bottom on the long line, turret top on a dash. The number above the dash = range in hundreds of metres.',
+    estPh: 'e.g. 1200', check: 'Check',
+    step2: 'Choose ammunition', finSub: 'Armour piercing', heshSub: 'High explosive', coaxSub: '7.62 machine gun',
+    step3: 'Lay and fire', step3hint: 'Lay the mark for your range on the centre of the target. Space fires; hold it for the coax.',
+    fire: 'FIRE', fireAmmo: 'FIRE · {a}', loading: 'LOADING {a}', loaded: '{a} LOADED', coaxReady: 'COAX READY',
+    resultIdle: 'Fire a round to see where it landed.',
+    score: 'Destroyed {k}', rounds: 'Rounds {r}', first: 'First-round hits {f}',
+    exercise: 'Exercise', ex_range: 'Free range', ex_estimate: 'Range estimation', ex_stationary: 'Stationary target', ex_moving: 'Moving target', next: 'Next target',
+    controls: 'Controls', k_drag: 'Lay the gun (Shift = fine)', k_arrows: 'Traverse / elevate (Shift fine, Ctrl fast)', k_wheel: 'Fine elevation', k_space: 'Fire (hold for coax)',
+    devTools: 'Developer tools',
+    hit: 'HIT', destroyed: 'TARGET DESTROYED', hitDestroyed: 'HIT · TARGET DESTROYED', miss: 'MISS',
+    over: 'high (over)', short: 'low (short)', high: 'high', low: 'low', left: 'left', right: 'right', berm: 'low, into the cover in front', offTarget: 'just off the target',
+    noTarget: 'MISS · no target near the impact', lost: 'Round lost · no impact seen',
+    advice: 'Next round: move the strike {d}. Check your range.', fLower: 'lower', fHigher: 'higher', fRight: 'right', fLeft: 'left', and: ' and ',
+    tank: 'Tank', wheeled: 'Wheeled vehicle', infantry: 'Infantry', atRange: '{t} at {r} m',
+    p_range: 'Free range: 21 vehicles from 300 to 3,100 m, built to the range-estimator height (two tanks moving), and infantry at 600, 800 and 1,000 m for the coax. Destroyed targets reset after 5 s. Ctrl + arrows to slew fast.',
+    p_estimate: 'Fit the tank in the range estimator, type your estimate and press Check.',
+    p_stationary: 'Stationary target. Estimate the range, choose ammunition, lay the mark on the centre and fire.',
+    p_moving: 'Moving target. Lay a lead mark on the target: a mark behind the centre, further out for a faster target.',
+    p_destroyed: 'Target destroyed with {n} round(s) in {s} s. Next target in 5 s.',
+    p_needEst: 'Type a range in metres first, for example 1200.',
+    estHead: '{p}% {dir}', estExact: 'Spot on', estSub: 'Measured target: {t} · true range {R} m · your estimate {E} m', estLong: 'long', estShort: 'short', estGood: 'Good estimate (within 10%).', estBad: 'Re-check the fit: tank bottom on the long line, turret top on a dash.', estNone: 'No target near the range estimator. Put a target in the stadia (top right of the sight) and check again.',
+    L_Zero: 'Reference circle (zero)', L_Stadia: 'Range estimator', L_FIN: 'Round 1 · FIN (KE)', L_HESH: 'Round 2 · HESH', L_Coax: 'Coax range scale', L_Lead: 'Lead marks', L_Unknown: 'Bottom cross',
+    T_Zero: 'The zero point every mark is measured from.',
+    T_Stadia: 'Tank bottom on the long line, turret top on a dash. The number above = range in 100s of m. Example: turret meets the "12" dash → 1,200 m.',
+    T_FIN: 'Small cluster just below the top circle. Aim points 800–2,400 m. Numbers = 100s of m. A pair of dashes: aim at the gap centre.',
+    T_HESH: 'Centre column of circles (O) and crosses (+), 400–3,200 m. The side numbers give the range of each cross. Stationary target: put it on the centre column at its range row. The column bends right with range (drift correction).',
+    T_Coax: 'Range lines for the coaxial machine gun, 200–1,800 m. Aim with the centre column at the height of the line for your range.',
+    T_Lead: 'Dashes and ticks either side of each row. Moving target: aim ahead of it. Put the target on a mark behind the centre, further out for a faster target.',
+    T_Unknown: 'Purpose unknown.',
+    u_dash: 'Turret top on this dash with the tank bottom on the long line → the target is at {R} m.', u_base: 'Put the bottom of the tank on this line.',
+    u_num: 'Number {n} = {R} m.', u_aim: 'Target at {R} m with {a}: lay this mark on the centre of the target and fire.',
+    u_coax: 'Target at {R} m: put it on the centre column at the height of this line, then fire the coax.',
+    u_circle: 'Circle: the odd hundreds between the numbered crosses.', u_cross: 'Cross: even hundreds, numbered at the sides.', u_pair: 'Pair of dashes: aim at the gap centre.',
+    u_heshNum: 'Number {n} = {R} m: the cross on this row.', u_coaxTitle: 'Title of the coax scale.', u_finDot: 'Dot midway between two FIN aim points.', u_colDot: 'Dot on the column between aim points.',
+    u_lead: 'Moving target at about {R} m ({a}): lay this mark on the target. A mark further out is for a faster target.',
+    u_zero: 'Every other mark is measured down and across from here.', u_point: 'Point at any mark in the sight to see how to use it.', rowSuffix: ' · {a} {R} m row'
+  },
+  he: {
+    title: 'מאמן ירי · כוונת חירום', subtitle: 'צ׳לנג׳ר 2 · כוונת GAS · הגדלה ×8 קבועה · צמודה לתותח, לא מיוצבת',
+    override: 'עקיפה ידנית', explainBtn: 'הסבר על הכוונת',
+    st1: 'הערכת טווח: התאם את המטרה במד-הטווח.', st2: 'בחירת סולם: FIN או HESH לתותח, COAX למקלע.', st3: 'כיוון וירי: עמודה מרכזית למטרה נייחת; סימני הובלה למטרה נעה.',
+    step1: 'הערכת טווח', step1hint: 'תחתית הטנק על הקו הארוך, גג הצריח על מקף. המספר מעל המקף = הטווח במאות מטרים.',
+    estPh: 'למשל 1200', check: 'בדוק',
+    step2: 'בחירת תחמושת', finSub: 'חודר שריון', heshSub: 'נפיץ', coaxSub: 'מקלע 7.62',
+    step3: 'כיוון וירי', step3hint: 'הנח את סימן הטווח על מרכז המטרה. רווח = ירי; החזק לירי מקלע.',
+    fire: 'אש', fireAmmo: 'אש · {a}', loading: 'טוען {a}', loaded: '{a} טעון', coaxReady: 'מקלע מוכן',
+    resultIdle: 'ירה כדי לראות היכן נחת הפגז.',
+    score: 'הושמדו {k}', rounds: 'פגזים {r}', first: 'פגיעה בפגז ראשון {f}',
+    exercise: 'תרגיל', ex_range: 'מטווח חופשי', ex_estimate: 'הערכת טווח', ex_stationary: 'מטרה נייחת', ex_moving: 'מטרה נעה', next: 'מטרה הבאה',
+    controls: 'מקשים', k_drag: 'הזזת התותח (Shift = עדין)', k_arrows: 'הצדה / הגבהה (Shift עדין, Ctrl מהיר)', k_wheel: 'הגבהה עדינה', k_space: 'ירי (החזק למקלע)',
+    devTools: 'כלי פיתוח',
+    hit: 'פגיעה', destroyed: 'המטרה הושמדה', hitDestroyed: 'פגיעה · המטרה הושמדה', miss: 'החטאה',
+    over: 'גבוה (מעבר למטרה)', short: 'נמוך (לפני המטרה)', high: 'גבוה', low: 'נמוך', left: 'שמאלה', right: 'ימינה', berm: 'נמוך, לתוך הסוללה שלפני המטרה', offTarget: 'ממש ליד המטרה',
+    noTarget: 'החטאה · אין מטרה ליד נקודת הפגיעה', lost: 'הפגז אבד · לא נראתה פגיעה',
+    advice: 'בירייה הבאה: הזז את הפגיעה {d}. בדוק את הטווח.', fLower: 'למטה', fHigher: 'למעלה', fRight: 'ימינה', fLeft: 'שמאלה', and: ' ו',
+    tank: 'טנק', wheeled: 'רכב גלגלי', infantry: 'חי״ר', atRange: '{t} ב-{r} מ׳',
+    p_range: 'מטווח חופשי: 21 רכבים מ-300 עד 3,100 מ׳ בגובה של מד-הטווח (שני טנקים בתנועה), וחי״ר ב-600, 800 ו-1,000 מ׳ לירי מקלע. מטרה מושמדת חוזרת אחרי 5 שנ׳. Ctrl + חצים לתנועה מהירה.',
+    p_estimate: 'התאם את מטרת הטנק במד-הטווח, הקלד את ההערכה ולחץ בדוק.',
+    p_stationary: 'מטרה נייחת. הערך טווח, בחר תחמושת, הנח את הסימן על המרכז וירה.',
+    p_moving: 'מטרה נעה. הנח סימן הובלה על המטרה: סימן מאחורי המרכז, רחוק יותר למטרה מהירה.',
+    p_destroyed: 'המטרה הושמדה ב-{n} פגזים תוך {s} שנ׳. מטרה הבאה בעוד 5 שנ׳.',
+    p_needEst: 'הקלד קודם טווח במטרים, למשל 1200.',
+    estHead: '{p}% {dir}', estExact: 'בדיוק', estSub: 'המטרה שנמדדה: {t} · טווח אמיתי {R} מ׳ · ההערכה שלך {E} מ׳', estLong: 'ארוך מדי', estShort: 'קצר מדי', estGood: 'הערכה טובה (עד 10%).', estBad: 'בדוק שוב את ההתאמה: תחתית הטנק על הקו הארוך, גג הצריח על מקף.', estNone: 'אין מטרה ליד מד-הטווח. הכנס מטרה לסטדיה (בצד ימין למעלה בכוונת) ובדוק שוב.',
+    L_Zero: 'עיגול ייחוס (אפס)', L_Stadia: 'מד-טווח', L_FIN: 'תחמושת 1 · FIN', L_HESH: 'תחמושת 2 · HESH', L_Coax: 'סולם מקלע (COAX)', L_Lead: 'סימני הובלה', L_Unknown: 'צלב תחתון',
+    T_Zero: 'נקודת האפס שממנה נמדד כל סימן.',
+    T_Stadia: 'תחתית הטנק על הקו הארוך, גג הצריח על מקף. המספר מעל = הטווח במאות מטרים. דוגמה: הצריח פוגש את המקף "12" ← 1,200 מ׳.',
+    T_FIN: 'מקבץ קטן מתחת לעיגול העליון. נקודות כיוון 800–2,400 מ׳. המספרים = מאות מטרים. זוג מקפים: כוון למרכז הרווח.',
+    T_HESH: 'עמודה מרכזית של עיגולים (O) וצלבים (+), 400–3,200 מ׳. המספרים בצדדים נותנים את הטווח של כל צלב. מטרה נייחת: הנח אותה על העמודה בשורת הטווח שלה. העמודה נוטה ימינה עם הטווח (תיקון סחיפה).',
+    T_Coax: 'קווי טווח למקלע המקביל, 200–1,800 מ׳. כוון עם העמודה המרכזית בגובה הקו של הטווח.',
+    T_Lead: 'מקפים וסימנים משני צדי כל שורה. מטרה נעה: כוון לפניה. הנח את המטרה על סימן מאחורי המרכז, רחוק יותר למטרה מהירה.',
+    T_Unknown: 'ייעוד לא ידוע.',
+    u_dash: 'גג הצריח על המקף הזה ותחתית הטנק על הקו הארוך ← המטרה ב-{R} מ׳.', u_base: 'הנח את תחתית הטנק על הקו הזה.',
+    u_num: 'המספר {n} = {R} מ׳.', u_aim: 'מטרה ב-{R} מ׳ עם {a}: הנח את הסימן הזה על מרכז המטרה וירה.',
+    u_coax: 'מטרה ב-{R} מ׳: הנח אותה על העמודה המרכזית בגובה הקו הזה וירה במקלע.',
+    u_circle: 'עיגול: המאות האי-זוגיות שבין הצלבים הממוספרים.', u_cross: 'צלב: מאות זוגיות, ממוספרות בצדדים.', u_pair: 'זוג מקפים: כוון למרכז הרווח.',
+    u_heshNum: 'המספר {n} = {R} מ׳: הצלב בשורה הזו.', u_coaxTitle: 'כותרת סולם המקלע.', u_finDot: 'נקודה באמצע בין שתי נקודות כיוון של FIN.', u_colDot: 'נקודה על העמודה בין נקודות הכיוון.',
+    u_lead: 'מטרה נעה בטווח של כ-{R} מ׳ ({a}): הנח את הסימן הזה על המטרה. סימן רחוק יותר = מטרה מהירה יותר.',
+    u_zero: 'כל שאר הסימנים נמדדים מכאן כלפי מטה ולצדדים.', u_point: 'הצבע על סימן בכוונת כדי לראות איך משתמשים בו.', rowSuffix: ' · שורת {a} {R} מ׳'
+  }
+};
+let lang = 'en';
+try { const l = localStorage.getItem('gasLang'); if (l === 'he' || l === 'en') lang = l; } catch (e) {}
+function T(key, v = {}) { let s = (STR[lang][key] ?? STR.en[key] ?? key); for (const k in v) s = s.split('{' + k + '}').join(v[k]); return s; }
+
+// ---------------------------------------------------------------- reticle
+const PRIMS = (() => {
+  const lines = document.getElementById('reticleCsv').textContent.trim().split('\n');
+  const head = lines.shift().split(',');
+  return lines.map((ln, i) => {
+    const c = ln.split(','); const o = { id: i };
+    head.forEach((h, k) => o[h] = c[k]);
+    for (const k of ['x1','y1','x2','y2','r']) o[k] = o[k] === '' ? null : parseFloat(o[k]);
+    o.range = o.range_m === '' ? null : parseInt(o.range_m, 10);
+    return o;
+  });
+})();
+const LINE_W = 0.20, DOT_D = 0.20;   // mrad
+const FIN_X = (() => { const d = PRIMS.filter(p => p.layer === 'FIN' && p.item === 'line dot'); return d.reduce((a, p) => a + p.x1, 0) / d.length; })();
+function aimTable(layer) {
+  const m = new Map();
+  for (const p of PRIMS) { if (p.layer !== layer || (p.item !== 'aim point' && p.item !== 'range line')) continue; if (!m.has(p.range)) m.set(p.range, []); m.get(p.range).push(p); }
+  const rows = [];
+  for (const [R, ps] of m) {
+    let x, y;
+    const circ = ps.find(p => p.prim === 'circle'), vert = ps.find(p => p.prim === 'line' && Math.abs(p.x1 - p.x2) < 0.01);
+    if (circ) { x = circ.x1; y = circ.y1; }
+    else if (vert) { x = vert.x1; y = ps.find(p => Math.abs(p.y1 - p.y2) < 0.01).y1; }
+    else if (layer === 'Coax') { x = 0; y = ps[0].y1; }
+    else { y = ps[0].y1; x = ps.length === 2 ? FIN_X : (ps[0].x1 + ps[0].x2) / 2; }
+    rows.push({ R, x, y });
+  }
+  return rows.sort((a, b) => a.R - b.R);
+}
+const RET = { FIN: aimTable('FIN'), HESH: aimTable('HESH'), COAX: aimTable('Coax') };
+const TANK_H = (() => {   // reference target height the stadia is drawn for (gap × range)
+  const base = PRIMS.find(p => p.item === 'base line').y1, d = PRIMS.filter(p => p.item === 'range dash');
+  return Math.round(d.reduce((a, p) => a + (base - p.y1) * p.range / 1000, 0) / d.length * 100) / 100;
+})();
+
+// ---------------------------------------------------------------- ballistics
+const G1 = [[0,.2629],[.5,.2032],[.6,.2028],[.7,.2034],[.8,.2104],[.85,.2196],[.9,.2546],[.95,.3010],[1.0,.4805],[1.05,.5345],[1.1,.5664],[1.2,.6100],[1.3,.6359],[1.4,.6477],[1.5,.6521],[1.6,.6518],[1.8,.6435],[2.0,.6297],[2.2,.6141],[2.5,.5925],[3.0,.5585],[4.0,.5100]];
+function cdG1(M) { if (M <= 0) return G1[0][1]; for (let i = 1; i < G1.length; i++) if (M <= G1[i][0]) { const [a, b] = G1[i - 1], [c, d] = G1[i]; return b + (d - b) * (M - a) / (c - a); } return G1[G1.length - 1][1]; }
+const DEFAULTS = { finV: 1650, finL: 60, heshV: 670, heshBC: 1270, heshK: 0.242, coaxV: 838, coaxBC: 338 };
+const P = Object.assign({}, DEFAULTS);
+const DISP = { FIN: 0.15, HESH: 0.25, COAX: 0.6 };   // 1σ per axis, mrad (assumed)
+const RELOAD_S = 1;
+const DS = 2, SMAX = 6000, TAB = {};
+function buildModel(round) {
+  const g = 9.81, rho = 1.225, a0 = 340.3, dt = 0.0005;
+  let x = 0, y = 0, vx, vy = 0, t = 0, accel;
+  if (round === 'FIN') { vx = P.finV; const k = P.finL / 1000; accel = v => k * v; }
+  else if (round === 'HESH') { vx = P.heshV; accel = v => rho * Math.PI / (8 * P.heshBC) * cdG1(v / a0) * v * v; }
+  else { vx = P.coaxV; accel = v => rho * Math.PI / (8 * P.coaxBC) * cdG1(v / a0) * v * v; }
+  const n = SMAX / DS + 1, Tt = new Float64Array(n), Y = new Float64Array(n), X = new Float64Array(n);
+  let i = 1, px = 0, py = 0, pt = 0;
+  while (i < n && t < 60) {
+    const v = Math.hypot(vx, vy), a = accel(v);
+    vx += (-a * vx / v) * dt; vy += (-a * vy / v - g) * dt; px = x; py = y; pt = t; x += vx * dt; y += vy * dt; t += dt;
+    while (i < n && x >= i * DS) {
+      const s = i * DS, f = (s - px) / (x - px), yy = py + f * (y - py), tt = pt + f * (t - pt);
+      Tt[i] = tt; Y[i] = 1000 * Math.atan(-yy / s); X[i] = round === 'HESH' ? 1000 * P.heshK * Math.pow(tt, 1.83) / s : 0; i++;
+    }
+  }
+  for (; i < n; i++) { Tt[i] = Infinity; Y[i] = Y[i - 1]; X[i] = X[i - 1]; }
+  return { T: Tt, Y, X, n };
+}
+function interpRet(tbl, R, key) {
+  const pts = [{ R: 0, x: tbl === RET.FIN ? FIN_X : 0, y: 0 }].concat(tbl);
+  if (R > pts[pts.length - 1].R) return null;
+  for (let i = 1; i < pts.length; i++) if (R <= pts[i].R) { const a = pts[i - 1], b = pts[i], f = (R - a.R) / (b.R - a.R); return a[key] + f * (b[key] - a[key]); }
+  return null;
+}
+function rebuild() {
+  for (const r of ['FIN', 'HESH', 'COAX']) {
+    const m = buildModel(r), tbl = RET[r], last = tbl[tbl.length - 1], li = Math.round(last.R / DS);
+    const YA = new Float64Array(m.n), XA = new Float64Array(m.n);
+    for (let i = 0; i < m.n; i++) {
+      const s = i * DS, y = interpRet(tbl, s, 'y'), x = interpRet(tbl, s, 'x');
+      YA[i] = y !== null ? y : last.y * m.Y[i] / m.Y[li];
+      XA[i] = x !== null ? x : (r === 'HESH' ? last.x * s / last.R : last.x);
+    }
+    TAB[r] = { T: m.T, model: { Y: m.Y, X: m.X }, reticle: { Y: YA, X: XA }, n: m.n };
+  }
+  renderBalTable();
+}
+function at(arr, s) { const f = s / DS, i = Math.floor(f); if (i >= arr.length - 1) return arr[arr.length - 1]; return arr[i] + (f - i) * (arr[i + 1] - arr[i]); }
+const modelY = (r, s) => at(TAB[r].model.Y, s);
+const tof = (r, s) => at(TAB[r].T, s);
+
+// ---------------------------------------------------------------- state
+const S = {
+  az: 0, el: 0.005, azEff: 0, elEff: 0.005,
+  ammo: 'HESH', loaded: 'HESH', reload: 0, reloadFor: null,
+  mode: 'reticle', disp: true, vib: true, blast: true, explain: false, dev: false, zoom: false, devOpen: false,
+  zoomC: { x: 1.5, y: 38.5 }, kick: 0, blastA: 0, coaxCool: 0, firing: false, fine: false,
+  hover: null, pinLayer: null, mouse: null, time: 0, kills: 0, rounds: 0, firstHits: 0, lastRec: null
+};
+const VIEW = { cx: 1.5, cy: 38.5, r: 52 };   // eyepiece field ~104 mrad (assumed, spec gap 9), centred on the reticle
+
+// ---------------------------------------------------------------- three.js scene: clear, sunny European countryside
+const glCanvas = document.getElementById('gl'), ov = document.getElementById('ov'), ctx = ov.getContext('2d');
+const sightEl = document.getElementById('sight');
+const renderer = new THREE.WebGLRenderer({ canvas: glCanvas, antialias: true, logarithmicDepthBuffer: true });
+renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0xc8d8e4, 3500, 28000);
+const camera = new THREE.PerspectiveCamera(5, 1, 0.5, 40000);
+camera.rotation.order = 'YXZ';
+const MUZZLE = new THREE.Vector3(0, 2.4, 0);
+camera.position.copy(MUZZLE);
+scene.add(new THREE.HemisphereLight(0xe4f0ff, 0x5f6640, 0.62));
+const sun = new THREE.DirectionalLight(0xfff4dc, 0.9); sun.position.set(-2600, 4200, 1400); scene.add(sun);
+(function sky() {
+  const g = new THREE.SphereGeometry(30000, 32, 16), col = [], pos = g.attributes.position;
+  const hz = new THREE.Color(0xd3e3ee), up = new THREE.Color(0x4f86c6), c = new THREE.Color();
+  for (let i = 0; i < pos.count; i++) { const h = Math.max(0, pos.getY(i) / 30000); c.copy(hz).lerp(up, Math.pow(h, 0.4)); col.push(c.r, c.g, c.b); }
+  g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  scene.add(new THREE.Mesh(g, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, fog: false, depthWrite: false })));
+})();
+function hash(x, z) { const s = Math.sin(x * 127.1 + z * 311.7) * 43758.5453; return s - Math.floor(s); }
+function vnoise(x, z) {
+  const xi = Math.floor(x), zi = Math.floor(z), xf = x - xi, zf = z - zi, u = xf * xf * (3 - 2 * xf), v = zf * zf * (3 - 2 * zf);
+  const a = hash(xi, zi), b = hash(xi + 1, zi), c = hash(xi, zi + 1), d = hash(xi + 1, zi + 1);
+  return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+}
+function fbm(x, z, o = 5) { let s = 0, a = 0.5, f = 1; for (let i = 0; i < o; i++) { s += a * vnoise(x * f, z * f); f *= 2; a *= 0.5; } return s; }
+function groundH(x, z) { const d = Math.hypot(x, z); if (d < 4300) return 0; const ramp = Math.min(1, (d - 4300) / 3500); return ramp * ramp * (40 + 240 * fbm(x / 2600, z / 2600)); }
+// field patchwork
+const FA = 0.28, FCX = 340, FCZ = 230;
+const FIELD_COLS = [0x667a42, 0x5c703c, 0x748449, 0x9c9662, 0x6a7d45, 0x55693a, 0x8a8c5a, 0x7a7a52].map(c => new THREE.Color(c));
+function fieldOf(x, z) { const u = x * Math.cos(FA) - z * Math.sin(FA), v = x * Math.sin(FA) + z * Math.cos(FA); return { i: Math.floor(u / FCX), j: Math.floor(v / FCZ), fu: (u / FCX) % 1, fv: (v / FCZ) % 1 }; }
+function groundColor(x, z, out) {
+  const f = fieldOf(x, z), h = hash(f.i, f.j);
+  out.copy(FIELD_COLS[Math.floor(h * FIELD_COLS.length)]);
+  out.multiplyScalar(0.9 + 0.18 * fbm(x / 60, z / 60, 3));
+  const d = Math.hypot(x, z); if (d > 4600) { const w = Math.min(1, (d - 4600) / 1500) * (fbm(x / 900 + 5, z / 900, 4) > 0.48 ? 1 : 0.25); out.lerp(new THREE.Color(0x3e5a2c), w * 0.85); }
+  const track = Math.abs(z + 1450 + 260 * Math.sin(x / 900)); if (track < 6) out.lerp(new THREE.Color(0xa08a64), 0.8 * (1 - track / 6));
+  return out;
+}
+const grassTex = (() => {
+  const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d'), img = g.createImageData(256, 256);
+  for (let y = 0; y < 256; y++) for (let x = 0; x < 256; x++) { const v = 228 + 16 * (fbm(x / 9, y / 9, 3) - 0.5) * 2 + (hash(x, y) - 0.5) * 14, k = (y * 256 + x) * 4; img.data[k] = v; img.data[k + 1] = v + 3; img.data[k + 2] = v - 8; img.data[k + 3] = 255; }
+  g.putImageData(img, 0, 0);
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = renderer.capabilities.getMaxAnisotropy(); return t;
+})();
+function terrainMesh(x0, x1, z0, z1, sx, sz, inner) {
+  const geo = new THREE.PlaneGeometry(x1 - x0, z1 - z0, sx, sz); geo.rotateX(-Math.PI / 2); geo.translate((x0 + x1) / 2, 0, (z0 + z1) / 2);
+  const pos = geo.attributes.position, col = new Float32Array(pos.count * 3), c = new THREE.Color(), uv = geo.attributes.uv;
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i), z = pos.getZ(i);
+    let h = groundH(x, z); if (!inner && x > -4000 && x < 4000 && z > -4300 && z < 60) h = -2;
+    pos.setY(i, h); groundColor(x, z, c); col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b; uv.setXY(i, x / 30, z / 30);
+  }
+  geo.setAttribute('color', new THREE.BufferAttribute(col, 3)); geo.computeVertexNormals();
+  scene.add(new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ vertexColors: true, map: grassTex })));
+}
+terrainMesh(-13000, 13000, -13000, 13000, 220, 220, false);
+terrainMesh(-4000, 4000, -4300, 60, 480, 262, true);
+
+// no trees or bushes in the firing area: nothing on the range may be mistaken for a target
+
+// ---------------------------------------------------------------- targets: 3D tanks and wheeled vehicles, all at the stadia reference height
+function camoTex() {
+  const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d');
+  g.fillStyle = '#4d5435'; g.fillRect(0, 0, 256, 256);
+  let sd = 9; const r = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
+  for (const [col, n, size] of [['#363d27', 12, 26], ['#5f5338', 9, 20], ['#22241b', 6, 13]]) {
+    g.fillStyle = col;
+    for (let i = 0; i < n; i++) { g.beginPath(); const cx = r() * 256, cy = r() * 256, rad = size * (0.6 + r()); for (let k = 0; k <= 12; k++) { const a = k / 12 * Math.PI * 2, rr = rad * (0.65 + r() * 0.5); g.lineTo(cx + Math.cos(a) * rr * 1.6, cy + Math.sin(a) * rr); } g.fill(); }
+  }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t;
+}
+const CAMO = camoTex();
+const MAT = {
+  hull: new THREE.MeshLambertMaterial({ map: CAMO }), steel: new THREE.MeshLambertMaterial({ color: 0x3b3f31 }),
+  track: new THREE.MeshLambertMaterial({ color: 0x2b2a26 }), wheel: new THREE.MeshLambertMaterial({ color: 0x33352d }),
+  tyre: new THREE.MeshLambertMaterial({ color: 0x1f1f1d }), dead: new THREE.MeshLambertMaterial({ color: 0x1b1a17 })
+};
+const shadowTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'), gr = g.createRadialGradient(32, 32, 6, 32, 32, 32); gr.addColorStop(0, 'rgba(0,0,0,.5)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })();
+const SHADOW = new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, depthWrite: false });
+function shapeFrom(pts) { const s = new THREE.Shape(); pts.forEach(([x, y], i) => i ? s.lineTo(x, y) : s.moveTo(x, y)); return s; }
+// side profile [forward, up] extruded across the width; forward = local -z
+function sideExtrude(profile, width, mat, x0 = 0) { const g = new THREE.ExtrudeGeometry(shapeFrom(profile), { depth: width, bevelEnabled: false }); g.rotateY(Math.PI / 2); g.translate(x0 - width / 2, 0, 0); return new THREE.Mesh(g, mat); }
+// top-view outline [across, forward] extruded upwards
+function topExtrude(outline, y0, h, mat) { const g = new THREE.ExtrudeGeometry(shapeFrom(outline), { depth: h, bevelEnabled: false }); g.rotateX(-Math.PI / 2); g.translate(0, y0, 0); return new THREE.Mesh(g, mat); }
+function cyl(r0, r1, len, mat, seg = 12) { return new THREE.Mesh(new THREE.CylinderGeometry(r0, r1, len, seg), mat); }
+function at3(m, x, y, z) { m.position.set(x, y, z); return m; }
+function shadowMesh(w, l) { const s = new THREE.Mesh(new THREE.PlaneGeometry(w, l), SHADOW); s.rotation.x = -Math.PI / 2; s.position.y = 0.03; s.userData.keep = true; return s; }
+function makeTank() {
+  const H = TANK_H, g = new THREE.Group(), turret = new THREE.Group();
+  g.add(shadowMesh(5.2, 9.5));
+  for (const sx of [-1, 1]) {
+    g.add(sideExtrude([[-3.62, 0.36], [-3.3, 0.04], [3.25, 0.04], [3.7, 0.44], [3.42, 0.82], [-3.42, 0.82]], 0.64, MAT.track, sx * 1.47));
+    for (let i = 0; i < 6; i++) { const w = cyl(0.33, 0.33, 0.12, MAT.wheel, 14); w.rotation.z = Math.PI / 2; g.add(at3(w, sx * 1.81, 0.38, -2.55 + i * 1.02)); }
+    g.add(at3(new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.42, 6.3), MAT.hull), sx * 1.82, 0.74, 0.1));
+  }
+  g.add(sideExtrude([[-3.5, 0.42], [3.15, 0.42], [3.78, 0.92], [2.55, 1.42], [-3.42, 1.42], [-3.55, 0.6]], 2.3, MAT.hull));
+  g.add(sideExtrude([[-3.48, 0.92], [3.3, 0.92], [2.55, 1.42], [-3.42, 1.42]], 3.55, MAT.hull));
+  const roof = 2.10;
+  turret.add(topExtrude([[-1.15, -1.95], [1.15, -1.95], [1.55, -0.45], [1.42, 1.25], [0.62, 2.0], [-0.62, 2.0], [-1.42, 1.25], [-1.55, -0.45]], 1.42, roof - 1.42, MAT.hull));
+  turret.add(at3(new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.42, 0.7), MAT.hull), 0, 1.72, 2.25));             // bustle
+  turret.add(at3(cyl(0.32, 0.34, H - roof, MAT.steel, 12), 0.55, roof + (H - roof) / 2, 0.55));              // cupola: top at H
+  turret.add(at3(cyl(0.22, 0.24, 0.1, MAT.steel, 10), -0.6, roof + 0.05, 0.4));
+  turret.add(at3(new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.5, 0.45), MAT.hull), 0, 1.78, -2.1));          // mantlet
+  const gun = cyl(0.075, 0.095, 5.5, MAT.steel, 12); gun.rotation.x = Math.PI / 2; turret.add(at3(gun, 0, 1.78, -5.0));
+  const evac = cyl(0.135, 0.135, 0.85, MAT.steel, 12); evac.rotation.x = Math.PI / 2; turret.add(at3(evac, 0, 1.78, -4.4));
+  const muz = cyl(0.11, 0.11, 0.25, MAT.steel, 12); muz.rotation.x = Math.PI / 2; turret.add(at3(muz, 0, 1.78, -7.65));
+  g.add(turret);
+  return { group: g, turret, boxes: [[-1.85, 0, -3.8, 1.85, 1.42, 3.6], [-1.6, 1.42, -2.2, 1.6, H, 2.6]], h: H };
+}
+function makeWheeled() {
+  const H = TANK_H, g = new THREE.Group(), turret = new THREE.Group();
+  g.add(shadowMesh(3.8, 8));
+  g.add(sideExtrude([[-3.05, 0.62], [2.75, 0.62], [3.3, 1.08], [2.35, 1.8], [-3.05, 1.8]], 2.5, MAT.hull));
+  for (const sx of [-1, 1]) for (const z of [-2.0, -0.4, 1.9]) { const w = cyl(0.55, 0.55, 0.4, MAT.tyre, 16); w.rotation.z = Math.PI / 2; g.add(at3(w, sx * 1.2, 0.55, z)); }
+  turret.add(at3(new THREE.Mesh(new THREE.BoxGeometry(1.4, H - 1.8, 1.6), MAT.hull), 0, 1.8 + (H - 1.8) / 2, 0.2));
+  const gun = cyl(0.04, 0.05, 1.7, MAT.steel, 8); gun.rotation.x = Math.PI / 2; turret.add(at3(gun, 0, 2.0, -1.4));
+  g.add(turret);
+  return { group: g, turret, boxes: [[-1.45, 0, -3.3, 1.45, 1.8, 3.1], [-0.75, 1.8, -0.7, 0.75, H, 1.1]], h: H };
+}
+const UNIFORM = new THREE.MeshLambertMaterial({ color: 0x5a5d3f }), GEAR = new THREE.MeshLambertMaterial({ color: 0x3f4230 }), SKIN = new THREE.MeshLambertMaterial({ color: 0x8a6d55 });
+function makeSoldier() {   // 1.78 m standing rifleman
+  const f = new THREE.Group();
+  for (const sx of [-1, 1]) {
+    f.add(at3(new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.86, 0.17), UNIFORM), sx * 0.1, 0.43, 0));        // leg
+    f.add(at3(new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.6, 0.13), UNIFORM), sx * 0.27, 1.17, -0.04));    // arm
+  }
+  f.add(at3(new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.62, 0.24), UNIFORM), 0, 1.17, 0));                  // torso
+  f.add(at3(new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.36, 0.3), GEAR), 0, 1.24, 0.01));                   // vest
+  f.add(at3(new THREE.Mesh(new THREE.SphereGeometry(0.11, 10, 8), SKIN), 0, 1.6, 0));                        // head
+  const helm = new THREE.Mesh(new THREE.SphereGeometry(0.135, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2), GEAR); f.add(at3(helm, 0, 1.64, 0));
+  const rifle = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.08, 0.95), GEAR); rifle.rotation.x = 0.5; f.add(at3(rifle, 0.12, 1.1, -0.22));
+  return f;
+}
+function makeInfantry(n) {
+  const g = new THREE.Group(), boxes = [], figs = [];
+  for (let i = 0; i < n; i++) {
+    const x = (i - (n - 1) / 2) * (3 + Math.random() * 2.5), z = (Math.random() - 0.5) * 6, f = makeSoldier();
+    f.position.set(x, 0, z); f.rotation.y = (Math.random() - 0.5) * 1.2 + Math.PI; g.add(f); figs.push(f);
+    boxes.push([x - 0.3, 0, z - 0.3, x + 0.3, 1.78, z + 0.3]);
+  }
+  return { group: g, figs, boxes, h: 1.78 };
+}
+let targets = [], tid = 0;
+function addTarget(kind, range, azDeg, opts = {}) {
+  const a = azDeg * Math.PI / 180, mk = kind === 'infantry' ? makeInfantry(opts.n || 4) : kind === 'wheeled' ? makeWheeled() : makeTank();
+  // facing: 'front' = gun pointing at us, 'side' = broadside, 'oblique' = three-quarter
+  const face = opts.face || 'oblique', yaw = a + (face === 'front' ? Math.PI : face === 'side' ? Math.PI / 2 * (opts.flip ? -1 : 1) : Math.PI * (opts.flip ? 0.75 : 1.25));
+  mk.group.traverse(o => { if (o.isMesh) o.userData.mat0 = o.material; });
+  const t = { id: ++tid, kind, obj: mk.group, turret: mk.turret, figs: mk.figs, perBox: kind === 'infantry', boxAlive: mk.boxes.map(() => true), boxes: mk.boxes, alive: true, hits: 0, h: mk.h, yaw: kind === 'infantry' ? a : yaw, yaw0: kind === 'infantry' ? a : yaw,
+    pos: new THREE.Vector3(Math.sin(a) * range, 0, -Math.cos(a) * range), speed: opts.speed || 0, travel: opts.travel || 0,
+    born: S.time, eng: null, killedAt: null };
+  t.origin = t.pos.clone();
+  scene.add(t.obj); place(t); targets.push(t);
+  return t;
+}
+function place(t) { t.obj.position.copy(t.pos); t.obj.rotation.y = -t.yaw; }
+function resetTarget(t) {
+  t.alive = true; t.hits = 0; t.killedAt = null; t.eng = null; t.born = S.time; t.yaw = t.yaw0; t.pos.copy(t.origin);
+  t.obj.traverse(o => { if (o.isMesh && o.userData.mat0) o.material = o.userData.mat0; });
+  if (t.turret) { t.turret.rotation.set(0, 0, 0); t.turret.position.set(0, 0, 0); }
+  if (t.figs) { t.boxAlive = t.boxes.map(() => true); t.figs.forEach(f => { f.rotation.x = 0; f.position.y = 0; }); }
+  place(t);
+}
+function clearTargets() { for (const t of targets) scene.remove(t.obj); targets = []; }
+const trueRange = t => Math.hypot(t.pos.x - MUZZLE.x, t.pos.z - MUZZLE.z);
+const tName = t => T(t.kind) + ' T' + t.id;
+
+// ---------------------------------------------------------------- effects
+function radialTex(stops) {
+  const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  stops.forEach(([o, col]) => gr.addColorStop(o, col)); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c);
+}
+const TEX = {
+  dust: radialTex([[0, 'rgba(196,178,138,.95)'], [1, 'rgba(196,178,138,0)']]),
+  smoke: radialTex([[0, 'rgba(28,26,24,.95)'], [0.6, 'rgba(40,38,34,.6)'], [1, 'rgba(40,38,34,0)']]),
+  flame: radialTex([[0, 'rgba(255,245,200,1)'], [0.3, 'rgba(255,170,50,.95)'], [1, 'rgba(220,60,10,0)']]),
+  flash: radialTex([[0, 'rgba(255,235,170,1)'], [1, 'rgba(255,120,30,0)']]),
+  tracer: radialTex([[0, 'rgba(255,240,200,1)'], [1, 'rgba(255,140,40,0)']]),
+  tracerR: radialTex([[0, 'rgba(255,210,190,1)'], [1, 'rgba(255,40,30,0)']])
+};
+const fx = [];
+function puff(pos, tex, size0, size1, life, opts = {}) {
+  const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, blending: opts.add ? THREE.AdditiveBlending : THREE.NormalBlending, fog: true });
+  const sp = new THREE.Sprite(mat); sp.position.copy(pos); sp.scale.setScalar(size0); scene.add(sp);
+  fx.push({ sp, t: 0, life, size0, size1, rise: opts.rise || 0, drift: opts.drift || 0, a0: opts.alpha || 1 });
+}
+function updateFx(dt) {
+  for (let i = fx.length - 1; i >= 0; i--) {
+    const f = fx[i]; f.t += dt; const k = f.t / f.life;
+    if (k >= 1) { scene.remove(f.sp); f.sp.material.dispose(); fx.splice(i, 1); continue; }
+    f.sp.scale.setScalar(f.size0 + (f.size1 - f.size0) * Math.sqrt(k)); f.sp.material.opacity = f.a0 * (1 - k);
+    f.sp.position.y += f.rise * dt; f.sp.position.x += f.drift * dt;
+  }
+  // destroyed targets burn and smoke, then reset after 5 s (free range)
+  for (const t of targets) {
+    if (!t.alive) {
+      const age = S.time - t.killedAt, burning = age < 14 && t.kind !== 'infantry';
+      if (scenario === 'range' && age > 5) { resetTarget(t); continue; }
+      if (t.kind === 'infantry') continue;
+      if (burning && S.time - (t.lastFlame || 0) > 0.08) { t.lastFlame = S.time; const p = t.pos.clone(); p.x += (Math.random() - 0.5) * 3; p.z += (Math.random() - 0.5) * 2; p.y = 1.2; puff(p, TEX.flame, 1.4, 3.4, 0.6, { add: true, rise: 3 }); }
+      if (age < 40 && S.time - (t.lastSmoke || 0) > (burning ? 0.16 : 0.5)) { t.lastSmoke = S.time; const p = t.pos.clone(); p.y = 1.5; puff(p, TEX.smoke, 2.5, 13, 8, { rise: 4.5, drift: 1.2, alpha: burning ? 0.85 : 0.4 }); }
+    }
+  }
+}
+
+// ---------------------------------------------------------------- projectiles
+const shells = [], shotLog = [];
+let shotSeq = 0;
+function gauss() { let u = 0, v = 0; while (!u) u = Math.random(); while (!v) v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+const dirOf = (az, el) => new THREE.Vector3(Math.sin(az) * Math.cos(el), Math.sin(el), -Math.cos(az) * Math.cos(el));
+function fire(round) {
+  const sd = S.disp ? DISP[round] / 1000 : 0, isCoax = round === 'COAX';
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: isCoax ? TEX.tracerR : TEX.tracer, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, sizeAttenuation: false, fog: false }));
+  sp.scale.setScalar(isCoax ? 0.011 : 0.018); scene.add(sp);
+  shells.push({ id: ++shotSeq, round, az0: S.azEff + gauss() * sd, el0: S.elEff + gauss() * sd, t: 0, s: 0, prev: MUZZLE.clone(), sp, mode: S.mode,
+    firedAt: S.time, estimate: parseFloat(document.getElementById('estimate').value) || null });
+  if (!isCoax) { S.rounds++; S.kick = 1; if (S.blast) S.blastA = 0.8; puff(MUZZLE.clone().add(dirOf(S.azEff, S.elEff).multiplyScalar(25)), TEX.dust, 4, 16, 1.4, { alpha: 0.5 }); renderScore(); }
+}
+function shellPos(sh, s) {
+  const tb = TAB[sh.round][sh.mode], az = sh.az0 + at(tb.X, s) / 1000, el = sh.el0 - at(tb.Y, s) / 1000;
+  return new THREE.Vector3(MUZZLE.x + Math.sin(az) * s, MUZZLE.y + s * Math.tan(el), MUZZLE.z - Math.cos(az) * s);
+}
+function sForTime(round, t, sGuess) {
+  const Tt = TAB[round].T; let i = Math.max(0, Math.floor(sGuess / DS));
+  while (i < Tt.length - 1 && Tt[i + 1] < t) i++;
+  if (i >= Tt.length - 1) return null;
+  const f = (t - Tt[i]) / (Tt[i + 1] - Tt[i]); return (i + Math.max(0, Math.min(1, f))) * DS;
+}
+function segBox(p0, p1, b) {
+  let t0 = 0, t1 = 1; const d = [p1.x - p0.x, p1.y - p0.y, p1.z - p0.z], o = [p0.x, p0.y, p0.z];
+  for (let k = 0; k < 3; k++) {
+    const lo = b[k], hi = b[k + 3];
+    if (Math.abs(d[k]) < 1e-9) { if (o[k] < lo || o[k] > hi) return null; continue; }
+    let a = (lo - o[k]) / d[k], c = (hi - o[k]) / d[k]; if (a > c) [a, c] = [c, a];
+    t0 = Math.max(t0, a); t1 = Math.min(t1, c); if (t0 > t1) return null;
+  }
+  return t0;
+}
+// world → target-local (inverse of obj.rotation.y = -yaw)
+function localOf(origin, yaw, p) { const v = p.clone().sub(origin), c = Math.cos(yaw), s = Math.sin(yaw); return new THREE.Vector3(v.x * c + v.z * s, v.y, -v.x * s + v.z * c); }
+function updateShells(dt) {
+  for (let i = shells.length - 1; i >= 0; i--) {
+    const sh = shells[i]; sh.t += dt;
+    const s = sForTime(sh.round, sh.t, sh.s);
+    if (s === null || s > SMAX - DS) { finishShell(sh, null, null); removeShell(i); continue; }
+    const p = shellPos(sh, s);
+    let best = null;
+    for (const t of targets) {
+      const l0 = localOf(t.pos, t.yaw, sh.prev), l1 = localOf(t.pos, t.yaw, p);
+      t.boxes.forEach((b, bi) => { if (t.perBox ? !t.boxAlive[bi] : !t.alive) return; const u = segBox(l0, l1, b); if (u !== null && (!best || u < best.u)) best = { u, t, bi }; });
+    }
+    const gh = groundH(p.x, p.z); let gu = null;
+    if (p.y <= gh) { const g0 = sh.prev.y - groundH(sh.prev.x, sh.prev.z); gu = g0 / (g0 - (p.y - gh)); }
+    if (best && (gu === null || best.u <= gu)) { finishShell(sh, sh.prev.clone().lerp(p, best.u), best.berm ? null : best.t, best); removeShell(i); continue; }
+    if (gu !== null) { finishShell(sh, sh.prev.clone().lerp(p, Math.max(0, Math.min(1, gu))), null); removeShell(i); continue; }
+    sh.s = s; sh.prev.copy(p); sh.sp.position.copy(p);
+  }
+}
+function removeShell(i) { const sh = shells[i]; scene.remove(sh.sp); sh.sp.material.dispose(); shells.splice(i, 1); }
+function angOf(p) { const v = p.clone().sub(MUZZLE); return { az: Math.atan2(v.x, -v.z), el: Math.atan2(v.y, Math.hypot(v.x, v.z)) }; }
+function extent(t) {
+  let a0 = 1e9, a1 = -1e9; const c = Math.cos(t.yaw), s = Math.sin(t.yaw);
+  for (const b of t.boxes) for (const x of [b[0], b[3]]) for (const z of [b[2], b[5]]) { const w = new THREE.Vector3(t.pos.x + x * c - z * s, 0, t.pos.z + x * s + z * c), a = angOf(w); a0 = Math.min(a0, a.az); a1 = Math.max(a1, a.az); }
+  const top = t.pos.clone(); top.y = t.h; const bot = t.pos.clone();
+  return { a0, a1, e0: angOf(bot).el, e1: angOf(top).el };
+}
+function missCodes(hp, t, ground) {
+  const a = angOf(hp), ex = extent(t), c = [];
+  if (ground) { const d = Math.hypot(hp.x, hp.z), R = trueRange(t); if (d < R - 3) c.push('short'); else if (d > R + 3) c.push('over'); }
+  else if (a.el > ex.e1) c.push('high'); else if (a.el < ex.e0) c.push('low');
+  if (a.az < ex.a0) c.push('left'); else if (a.az > ex.a1) c.push('right');
+  return c.length ? c : ['offTarget'];
+}
+function finishShell(sh, hp, hitT, info) {
+  const main = sh.round !== 'COAX';
+  let kind = 'lost', near = null, off = null, codes = [];
+  if (hp) {
+    const ai = angOf(hp); let bd = 1e9;
+    for (const t of targets) { const c = t.pos.clone(); c.y = t.h / 2; const a_ = angOf(c), d = Math.hypot(ai.az - a_.az, ai.el - a_.el) * 1000; if (d < bd) { bd = d; near = t; } }
+    if (bd > 15) near = null;
+    if (hitT) near = hitT;
+    if (near) { const c = near.pos.clone(); c.y = near.h / 2; const a_ = angOf(c); off = { x: (ai.az - a_.az) * 1000, y: (ai.el - a_.el) * 1000 }; }
+    if (hitT) { kind = 'hit'; const was = hitT.alive; applyHit(hitT, sh.round, info, hp); if (was && !hitT.alive) kind = 'kill'; }
+    else if (near) { kind = 'miss'; codes = info && info.berm ? ['berm'] : missCodes(hp, near, true); if (sh.round === 'HESH') splash(hp); }
+    else { kind = 'noTarget'; if (sh.round === 'HESH') splash(hp); }
+    if (hitT && main) puff(hp, TEX.flash, 3, 9, 0.35, { add: true });
+    else if (main) { puff(hp, TEX.dust, sh.round === 'HESH' ? 4 : 2.5, sh.round === 'HESH' ? 16 : 9, 2.6, { rise: 1.2, alpha: 0.9 }); if (sh.round === 'HESH') puff(hp, TEX.flash, 2, 6, 0.25, { add: true }); }
+    else puff(hp, TEX.dust, 0.5, 1.6, 0.8, { alpha: 0.8 });
+  }
+  const rec = { n: sh.id, time: sh.firedAt, round: sh.round, mode: sh.mode, target: near, range: near ? trueRange(near) : null,
+    est: sh.estimate, kind, codes, dx: off ? off.x : null, dy: off ? off.y : null, tof: sh.t };
+  shotLog.push(rec);
+  if (near) engage(near, sh, kind);
+  S.lastRec = rec; renderResult(rec, main);
+}
+function splash(hp) {   // HESH knocks down soldiers within 8 m
+  for (const t of targets) if (t.kind === 'infantry' && t.alive) t.figs.forEach((f, i) => { if (t.boxAlive[i] && f.getWorldPosition(new THREE.Vector3()).distanceTo(hp) < 8) dropSoldier(t, i); });
+}
+function dropSoldier(t, i) {
+  t.boxAlive[i] = false; const f = t.figs[i]; f.rotation.x = Math.PI / 2 * (Math.random() < 0.5 ? 1 : -1); f.position.y = 0.15;
+  if (t.boxAlive.every(a => !a)) { t.alive = false; t.killedAt = S.time; S.kills++; renderScore(); }
+}
+function applyHit(t, round, info, hp) {
+  t.hits++;
+  if (t.kind === 'infantry') { dropSoldier(t, info.bi); if (round !== 'COAX') splash(hp); return; }
+  if (round === 'COAX') { puff(hp, TEX.flash, 0.3, 0.8, 0.12, { add: true }); if (t.kind === 'wheeled' && t.hits >= 5) kill(t); return; }
+  kill(t);
+}
+function kill(t) {
+  if (!t.alive) return;
+  t.alive = false; t.killedAt = S.time; S.kills++; renderScore();
+  t.obj.traverse(o => { if (o.isMesh && !o.userData.keep) o.material = MAT.dead; });
+  t.turret.rotation.set(0.12, 0.45, 0.08); t.turret.position.set(0.35, 0.18, 0.25);
+  const p = t.pos.clone(); p.y = t.h * 0.7;
+  puff(p, TEX.flash, 6, 22, 0.6, { add: true }); puff(p, TEX.flame, 5, 14, 1.4, { add: true, rise: 4 });
+  for (let i = 0; i < 6; i++) puff(p.clone().add(new THREE.Vector3((Math.random() - .5) * 6, Math.random() * 3, (Math.random() - .5) * 6)), TEX.smoke, 4, 16, 4 + Math.random() * 3, { rise: 5, alpha: 0.9 });
+}
+
+// ---------------------------------------------------------------- feedback
+let calloutTimer = null;
+function callout(main, cls, destroyed) {
+  const m = document.getElementById('calloutMain'); m.textContent = main; m.className = 'main ' + cls;
+  const k = document.getElementById('calloutKill'); k.textContent = T('destroyed'); k.style.display = destroyed ? 'inline-block' : 'none';
+  const c = document.getElementById('callout'); c.dir = lang === 'he' ? 'rtl' : 'ltr'; c.classList.add('show');
+  clearTimeout(calloutTimer); calloutTimer = setTimeout(() => c.classList.remove('show'), destroyed ? 3200 : 2200);
+}
+function missText(codes) { return codes.map(c => T(c)).join(', '); }
+function headline(r) {
+  if (r.kind === 'kill') return T('hitDestroyed');
+  if (r.kind === 'hit') return T('hit');
+  if (r.kind === 'miss') return T('miss') + ': ' + missText(r.codes);
+  if (r.kind === 'noTarget') return T('noTarget');
+  return T('lost');
+}
+function advice(r) {
+  if (r.kind !== 'miss' || r.codes[0] === 'offTarget') return '';
+  const f = [];
+  if (r.codes.some(c => c === 'high' || c === 'over')) f.push(T('fLower'));
+  if (r.codes.some(c => c === 'low' || c === 'short' || c === 'berm')) f.push(T('fHigher'));
+  if (r.codes.includes('left')) f.push(T('fRight')); if (r.codes.includes('right')) f.push(T('fLeft'));
+  return f.length ? T('advice', { d: f.join(T('and')) }) : '';
+}
+function renderResult(r, main) {
+  const el = document.getElementById('result');
+  if (!r) { el.innerHTML = `<div class="sub">${T('resultIdle')}</div>`; return; }
+  const hit = r.kind === 'hit' || r.kind === 'kill';
+  const sub = r.round + (r.target ? ' · ' + T('atRange', { t: tName(r.target), r: fmt(r.range) }) : '');
+  const fix = advice(r);
+  el.innerHTML = `<div class="big ${hit ? 'hit' : 'miss'}">${headline(r)}</div><div class="sub">${sub}</div>${fix ? `<div class="fix">${fix}</div>` : ''}`;
+  if (main !== undefined && (main || r.kind === 'kill')) callout(hit ? T('hit') : (r.kind === 'miss' ? T('miss') + ' · ' + missText(r.codes) : headline(r)), hit ? 'hit' : 'miss', r.kind === 'kill');
+}
+function renderScore() {
+  document.getElementById('score').innerHTML = `<span>${T('score', { k: '<b>' + S.kills + '</b>' })}</span><span>${T('rounds', { r: '<b>' + S.rounds + '</b>' })}</span><span>${T('first', { f: '<b>' + S.firstHits + '</b>' })}</span>`;
+}
+
+// ---------------------------------------------------------------- engagements (developer view)
+const engagements = [];
+function engage(t, sh, kind) {
+  if (!t.eng) { t.eng = { n: engagements.length + 1, t, range: trueRange(t), est: sh.estimate, rounds: 0, first: sh.firedAt - t.born, hit: null, moving: !!t.speed }; engagements.push(t.eng); }
+  const e = t.eng; e.rounds++; e.range = trueRange(t); if (e.est === null && sh.estimate) e.est = sh.estimate;
+  if ((kind === 'hit' || kind === 'kill') && e.hit === null) { e.hit = S.time - t.born; if (e.rounds === 1 && sh.round !== 'COAX') { S.firstHits++; renderScore(); } }
+  renderEng();
+  if (kind === 'kill' && (scenario === 'stationary' || scenario === 'moving')) {
+    setPrompt(T('p_destroyed', { n: e.rounds, s: fmt(e.hit, 1) }));
+    clearTimeout(nextTimer); nextTimer = setTimeout(nextTarget, 5000);
+  }
+}
+let nextTimer = null;
+const fmt = (v, d = 0) => v === null || v === undefined || !isFinite(v) ? '—' : v.toLocaleString('en-GB', { minimumFractionDigits: d, maximumFractionDigits: d });
+function renderEng() {
+  document.querySelector('#engTbl tbody').innerHTML = engagements.slice().reverse().map(e => `<tr><td>${e.n}</td><td>${e.label || ('T' + e.t.id + ' ' + e.t.kind)}${e.moving ? ' ↔' : ''}</td><td>${fmt(e.range)}</td><td>${fmt(e.est)}</td><td>${e.rounds}</td><td>${fmt(e.first, 1)}</td><td class="${e.hit !== null ? 'pass' : ''}">${fmt(e.hit, 1)}</td></tr>`).join('') ||
+    '<tr><td colspan="7" style="text-align:left;color:var(--muted)">No engagements yet.</td></tr>';
+}
+
+// ---------------------------------------------------------------- exercises
+let scenario = 'range', promptKey = 'p_range';
+function setPrompt(html) { document.getElementById('prompt').innerHTML = html; }
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const jit = (v, j) => Math.round(v + (Math.random() - 0.5) * 2 * j);
+const FREE_LAYOUT = [
+  ['tank', 300, -7, { face: 'oblique' }], ['wheeled', 400, 9, { face: 'side' }], ['tank', 450, 2.5, { face: 'front' }], ['tank', 600, -13, { face: 'side', flip: true }],
+  ['wheeled', 700, -2.5, { face: 'oblique', flip: true }], ['tank', 750, 14, { face: 'oblique' }], ['tank', 900, 5.5, { face: 'side' }], ['wheeled', 1000, -9, { face: 'front' }],
+  ['tank', 1100, 11, { face: 'front' }], ['tank', 1250, -4.5, { face: 'oblique', flip: true }], ['wheeled', 1300, 16, { face: 'side', flip: true }], ['tank', 1450, 0.8, { face: 'side' }],
+  ['tank', 1650, -15, { face: 'oblique' }], ['tank', 1850, 7.5, { face: 'front' }], ['tank', 2050, -6.5, { face: 'side' }], ['tank', 2350, 3.5, { face: 'oblique', flip: true }],
+  ['tank', 2700, -10.5, { face: 'front' }], ['tank', 3100, 12.5, { face: 'side' }], ['tank', 2900, -1.8, { face: 'oblique' }],
+  ['infantry', 600, -4.2, { n: 4 }], ['infantry', 800, 9.8, { n: 5 }], ['infantry', 1000, 2.6, { n: 4 }], ['infantry', 620, 12.2, { n: 3 }], ['infantry', 980, -12.4, { n: 3 }]];
+const MOVERS = [[850, -1.2, 20], [1700, 9.5, 30]];
+function nextTarget() {
+  clearTimeout(nextTimer); clearTargets(); document.getElementById('estResult').hidden = true;
+  const azNow = S.az * 180 / Math.PI, r = (a, b) => a + Math.random() * (b - a), face = () => pick(['front', 'side', 'oblique']);
+  if (scenario === 'range') {
+    for (const [k, R, a, o] of FREE_LAYOUT) addTarget(k, R, a, o);
+    for (const [R, a, v] of MOVERS) addTarget('tank', R, a, { face: 'side', speed: v / 3.6, travel: 120 });
+    promptKey = 'p_range';
+  } else if (scenario === 'estimate') {
+    addTarget('tank', jit(pick([600, 700, 800, 1000, 1200, 1400, 1600, 1800, 2000]), 60), azNow + r(-1.5, 1.5), { face: face(), flip: Math.random() < 0.5 }); promptKey = 'p_estimate';
+  } else if (scenario === 'stationary') {
+    const k = Math.random(); if (k < 0.2) addTarget('infantry', pick([600, 800, 1000]), azNow + r(-2, 2), { n: 4 });
+    else addTarget(k < 0.85 ? 'tank' : 'wheeled', jit(pick([300, 400, 500, 600, 700, 800, 1000, 1200, 1400, 1600, 1800, 2000, 2300, 2600, 3000]), 40), azNow + r(-2, 2), { face: face(), flip: Math.random() < 0.5 }); promptKey = 'p_stationary';
+  } else {
+    addTarget('tank', jit(pick([300, 500, 700, 900, 1200, 1500, 1800]), 40), azNow + r(-1.5, 1.5), { face: 'side', flip: Math.random() < 0.5, speed: r(10, 35) / 3.6, travel: 200 }); promptKey = 'p_moving';
+  }
+  setPrompt(T(promptKey));
+}
+// the measured target is the one sitting in (or nearest) the range estimator; otherwise the one nearest the aim column
+let estMark = null;
+function checkEstimate() {
+  const est = parseFloat(document.getElementById('estimate').value), box = document.getElementById('estResult');
+  box.hidden = false;
+  if (!isFinite(est)) { box.innerHTML = `<div class="s">${T('p_needEst')}</div>`; return; }
+  const sx0 = 4.5, sx1 = 18.4, sy0 = -4.6, sy1 = 0.4;
+  let best = null, bd = 1e9;
+  for (const x of targets) {
+    if (x.kind === 'infantry') continue;
+    const c = x.pos.clone(); c.y = x.h / 2; const q = toReticle(c); if (!q) continue;
+    const dS = Math.hypot(Math.max(sx0 - q.x, 0, q.x - sx1), Math.max(sy0 - q.y, 0, q.y - sy1));
+    const dC = Math.hypot(Math.max(Math.abs(q.x - 1) - 2, 0), Math.max(-6 - q.y, 0, q.y - 80));
+    const d = Math.min(dS, dC + 4);
+    if (d < bd) { bd = d; best = x; }
+  }
+  if (!best || bd > 12) { box.innerHTML = `<div class="s">${T('estNone')}</div>`; return; }
+  const R = trueRange(best), err = (est - R) / R * 100, good = Math.abs(err) <= 10;
+  const head = Math.abs(err) < 0.5 ? T('estExact') : T('estHead', { p: fmt(Math.abs(err)), dir: T(err >= 0 ? 'estLong' : 'estShort') });
+  box.innerHTML = `<div class="v ${good ? 'ok' : 'bad'}">${good ? '✓ ' : '✗ '}${head}</div><div class="s">${T('estSub', { t: tName(best), R: fmt(R), E: fmt(est) })}</div><div>${T(good ? 'estGood' : 'estBad')}</div>`;
+  estMark = { t: best, until: S.time + 3 };
+  engagements.push({ n: engagements.length + 1, label: 'T' + best.id + ' (estimate)', range: R, est, rounds: 0, first: null, hit: null }); renderEng();
+  if (scenario === 'estimate') { clearTimeout(nextTimer); nextTimer = setTimeout(nextTarget, 5000); }
+}
+
+// ---------------------------------------------------------------- view mapping
+let SZ = 600, DPR = 1;
+const viewParams = () => S.zoom ? { cx: S.zoomC.x, cy: S.zoomC.y, r: 17 } : VIEW;
+function mapper() {
+  const v = viewParams(), u0 = Math.tan((v.cx - v.r) / 1000), u1 = Math.tan((v.cx + v.r) / 1000), v0 = Math.tan((v.cy - v.r) / 1000), v1 = Math.tan((v.cy + v.r) / 1000);
+  return { v, u0, u1, v0, v1, ppm: SZ / (2 * v.r),
+    px: x => (Math.tan(x / 1000) - u0) / (u1 - u0) * SZ, py: y => (Math.tan(y / 1000) - v0) / (v1 - v0) * SZ,
+    inv: (sx, sy) => ({ x: 1000 * Math.atan(u0 + sx / SZ * (u1 - u0)), y: 1000 * Math.atan(v0 + sy / SZ * (v1 - v0)) }) };
+}
+function setProjection(M) { const n = camera.near; camera.projectionMatrix.makePerspective(n * M.u0, n * M.u1, -n * M.v0, -n * M.v1, n, camera.far); camera.projectionMatrixInverse.copy(camera.projectionMatrix).invert(); }
+function resize() {
+  const wrap = document.getElementById('sightWrap'), phone = window.innerWidth <= 900;
+  const w = wrap.clientWidth, h = phone ? window.innerHeight - 132 - 60 : wrap.clientHeight;
+  SZ = Math.max(220, Math.floor(Math.min(w, h)));
+  sightEl.style.width = SZ + 'px'; sightEl.style.height = SZ + 'px';
+  DPR = Math.min(2, window.devicePixelRatio || 1); renderer.setSize(SZ, SZ, false); ov.width = SZ * DPR; ov.height = SZ * DPR;
+}
+window.addEventListener('resize', resize);
+function toReticle(p) { const v = p.clone().applyMatrix4(camera.matrixWorldInverse); if (v.z >= 0) return null; return { x: 1000 * Math.atan(v.x / -v.z), y: 1000 * Math.atan(-v.y / -v.z) }; }
+
+// ---------------------------------------------------------------- explain mode (Figure 2)
+const LAYERS = {
+  Zero: { key: 'O', color: '--c-zero', badge: [1.9, -2.0] }, Stadia: { key: 'R', color: '--c-stadia', badge: [19.7, 0.0] },
+  FIN: { key: 'F', color: '--c-fin', badge: [-4.0, 2.9] }, HESH: { key: 'H', color: '--c-hesh', badge: [3.6, 28.4] },
+  Coax: { key: 'C', color: '--c-coax', badge: [-20.5, 60.4] }, Lead: { key: 'L', color: '--c-lead', badge: [-11.8, 55.6] }, Unknown: { key: '?', color: '--c-unk', badge: [1.9, 80.5] }
+};
+const INK = { Zero: '#111111', Stadia: '#6d2fb8', FIN: '#1f4fb0', HESH: '#bf520c', Coax: '#08795a', Lead: '#4a5260', Unknown: '#c42a18' };
+// explain-mode colours: bright, on a thin dark outline, so they read on the terrain without a white wash
+const INK_X = { Zero: '#ffffff', Stadia: '#c39bff', FIN: '#7fb0ff', HESH: '#ffa04d', Coax: '#4ff0c0', Lead: '#e4e8ee', Unknown: '#ff7360' };
+function primCenter(p) { return p.prim === 'line' || p.prim === 'textbox' ? { x: (p.x1 + p.x2) / 2, y: (p.y1 + p.y2) / 2 } : { x: p.x1, y: p.y1 }; }
+function primDist(p, x, y) {
+  if (p.prim === 'line') { const dx = p.x2 - p.x1, dy = p.y2 - p.y1, L = dx * dx + dy * dy, u = L ? Math.max(0, Math.min(1, ((x - p.x1) * dx + (y - p.y1) * dy) / L)) : 0; return Math.hypot(x - (p.x1 + u * dx), y - (p.y1 + u * dy)); }
+  if (p.prim === 'circle') return Math.max(0, Math.hypot(x - p.x1, y - p.y1) - p.r);
+  if (p.prim === 'dot') return Math.hypot(x - p.x1, y - p.y1);
+  return Math.hypot(x - Math.max(p.x1, Math.min(p.x2, x)), y - Math.max(p.y1, Math.min(p.y2, y)));
+}
+function markCluster(p) { const c = primCenter(p); return PRIMS.filter(q => q.layer === p.layer && q.item === p.item && q.range === p.range && q.side === p.side && Math.hypot(primCenter(q).x - c.x, primCenter(q).y - c.y) < (p.layer === 'Lead' ? 1.5 : 3.5)); }
+function describe(p) {
+  const L = LAYERS[p.layer], R = p.range, use = [], tech = [], c = primCenter(p), rnd_ = p.layer === 'Coax' ? 'COAX' : p.layer;
+  let title = T('L_' + p.layer);
+  if (p.layer === 'Stadia' && p.item === 'range dash') { title += ` · ${fmt(R)} m`; use.push(T('u_dash', { R: fmt(R) })); }
+  else if (p.layer === 'Stadia' && p.item === 'base line') use.push(T('u_base'));
+  else if (p.layer === 'Stadia') use.push(T('u_num', { n: p.text, R: fmt(R) }));
+  if ((p.layer === 'FIN' || p.layer === 'HESH' || p.layer === 'Coax') && (p.item === 'aim point' || p.item === 'range line') && R) {
+    title += ` · ${fmt(R)} m`;
+    use.push(p.layer === 'Coax' ? T('u_coax', { R: fmt(R) }) : T('u_aim', { R: fmt(R), a: p.layer }));
+    if (p.layer === 'HESH') use.push(PRIMS.some(q => q.layer === 'HESH' && q.range === R && q.prim === 'circle') ? T('u_circle') : T('u_cross'));
+    if (p.layer === 'FIN' && PRIMS.filter(q => q.layer === 'FIN' && q.item === 'aim point' && q.range === R).length === 2) use.push(T('u_pair'));
+    const row = RET[rnd_].find(a => a.R === R), my = modelY(rnd_, R);
+    tech.push(`Aim point (${fmt(row.x, 2)}, ${fmt(row.y, 2)}) mrad · model needs ${fmt(my, 2)} · Δ ${fmt(my - row.y, 2)} mrad · TOF ${fmt(tof(rnd_, R), 2)} s`);
+  }
+  if ((p.layer === 'FIN') && p.prim === 'textbox') use.push(T('u_num', { n: p.text, R: fmt(R) }));
+  if (p.layer === 'Coax' && p.prim === 'textbox') use.push(p.text === 'COAX' ? T('u_coaxTitle') : T('u_num', { n: p.text, R: fmt(R) }));
+  if (p.layer === 'HESH' && p.prim === 'textbox') use.push(T('u_heshNum', { n: p.text, R: fmt(R) }));
+  if (p.item === 'line dot') use.push(p.layer === 'FIN' ? T('u_finDot') : T('u_colDot'));
+  if (p.layer === 'Lead') {
+    const isFin = p.item.startsWith('FIN'), r = isFin ? 'FIN' : 'HESH';
+    title += T('rowSuffix', { a: r, R: fmt(R) }); use.push(T('u_lead', { R: fmt(R), a: r }));
+    let mx = c.x;
+    const vert = p.prim === 'line' && Math.abs(p.x1 - p.x2) < 0.01 ? p : PRIMS.find(q => q.layer === 'Lead' && q.range === R && q.side === p.side && q.item === p.item && q.prim === 'line' && Math.abs(q.x1 - q.x2) < 0.01 && Math.abs(q.x1 - c.x) < 1.0);
+    if (vert) mx = vert.x1;
+    const col = isFin ? FIN_X : interpRet(RET.HESH, R, 'x'), lead = Math.abs(mx - col), t = tof(r, R);
+    tech.push(`Lead ${fmt(lead, 2)} mrad · speed implied by the model ≈ ${fmt(lead / 1000 * R / t * 3.6, 0)} km/h (open: gap 5)`);
+  }
+  if (p.layer === 'Zero') use.push(T('u_zero'));
+  tech.push(`#${p.id} ${p.prim} (${fmt(p.x1, 2)}, ${fmt(p.y1, 2)})${p.x2 !== null ? ' → (' + fmt(p.x2, 2) + ', ' + fmt(p.y2, 2) + ')' : ''}${p.r ? ' r ' + fmt(p.r, 2) : ''}`);
+  return { title, body: T('T_' + p.layer), use, tech, key: L.key, color: L.color };
+}
+function renderCard(p, layer) {
+  const card = document.getElementById('card');
+  const d = p ? describe(p) : { title: T('L_' + layer), body: T('T_' + layer), use: [T('u_point')], tech: [], key: LAYERS[layer].key, color: LAYERS[layer].color };
+  card.style.setProperty('--c', `var(${d.color})`);
+  card.innerHTML = `<h3><span class="badge">${d.key}</span>${d.title}</h3>${d.use.map(u => `<p class="use">${u}</p>`).join('')}<p>${d.body}</p>${S.devOpen && d.tech.length ? `<div class="facts">${d.tech.join('<br>')}</div>` : ''}`;
+}
+function buildLegend() {
+  const lg = document.getElementById('legend'); lg.innerHTML = '';
+  for (const [k, L] of Object.entries(LAYERS)) {
+    const b = document.createElement('button'); b.style.setProperty('--c', `var(${L.color})`);
+    b.innerHTML = `<span class="badge">${L.key}</span>${T('L_' + k).replace(/^(Round \d · |תחמושת \d · )/, '')}`; b.setAttribute('aria-pressed', String(S.pinLayer === k));
+    b.onclick = () => { S.pinLayer = S.pinLayer === k ? null : k; buildLegend(); renderCard(null, k); };
+    lg.appendChild(b);
+  }
+}
+
+// ---------------------------------------------------------------- overlay drawing
+function drawOverlay(M) {
+  const c = ctx; c.setTransform(DPR, 0, 0, DPR, 0, 0); c.clearRect(0, 0, SZ, SZ);
+  const ppm = M.ppm;
+  if (S.dev) {
+    const v = M.v, x0 = Math.ceil(v.cx - v.r), x1 = Math.floor(v.cx + v.r), y0 = Math.ceil(v.cy - v.r), y1 = Math.floor(v.cy + v.r);
+    c.lineWidth = 1;
+    for (let x = x0; x <= x1; x++) { c.strokeStyle = x % 5 === 0 ? 'rgba(40,90,160,.45)' : 'rgba(40,90,160,.15)'; c.beginPath(); c.moveTo(M.px(x), 0); c.lineTo(M.px(x), SZ); c.stroke(); }
+    for (let y = y0; y <= y1; y++) { c.strokeStyle = y % 5 === 0 ? 'rgba(40,90,160,.45)' : 'rgba(40,90,160,.15)'; c.beginPath(); c.moveTo(0, M.py(y)); c.lineTo(SZ, M.py(y)); c.stroke(); }
+    c.fillStyle = 'rgba(30,70,130,.9)'; c.font = `500 ${Math.max(9, ppm * 0.8)}px JetBrains Mono, monospace`; c.textAlign = 'left'; c.textBaseline = 'alphabetic';
+    for (let y = Math.ceil(y0 / 5) * 5; y <= y1; y += 5) c.fillText(String(y), M.px(v.cx - v.r * 0.6), M.py(y) - 2);
+    for (let x = Math.ceil(x0 / 5) * 5; x <= x1; x += 5) c.fillText(String(x), M.px(x) + 2, M.py(v.cy + v.r * 0.55));
+  }
+  if (S.explain) { c.save(); c.beginPath(); c.arc(SZ / 2, SZ / 2, SZ / 2, 0, Math.PI * 2); c.clip(); c.fillStyle = 'rgba(244,245,240,.34)'; c.fillRect(0, 0, SZ, SZ); c.restore(); }
+  const hl = S.explain && S.hover ? new Set(markCluster(S.hover).map(p => p.id)) : null;
+  for (const p of PRIMS) {
+    let col = '#0b0b0a', w = Math.max(1, LINE_W * ppm);
+    c.globalAlpha = 1;
+    if (S.explain) { col = INK[p.layer]; if (S.pinLayer && S.pinLayer !== p.layer) c.globalAlpha = 0.22; if (hl && hl.has(p.id)) w *= 2.4; }
+    const passes = S.explain ? [['rgba(255,255,255,.3)', w + 1.2], [col, w]] : [[col, w]];
+    for (const [pc, pw] of passes) {
+      const halo = passes.length > 1 && pc !== col;
+      c.strokeStyle = pc; c.fillStyle = pc; c.lineWidth = pw; c.lineCap = 'butt';
+      if (p.prim === 'line') { c.beginPath(); c.moveTo(M.px(p.x1), M.py(p.y1)); c.lineTo(M.px(p.x2), M.py(p.y2)); c.stroke(); }
+      else if (p.prim === 'circle') { c.beginPath(); c.arc(M.px(p.x1), M.py(p.y1), p.r * ppm, 0, Math.PI * 2); c.stroke(); }
+      else if (p.prim === 'dot') { c.beginPath(); c.arc(M.px(p.x1), M.py(p.y1), Math.max(0.9, DOT_D / 2 * ppm * (hl && hl.has(p.id) ? 2 : 1)) + (halo ? 1 : 0), 0, Math.PI * 2); c.fill(); }
+      else {
+        const h = (p.y2 - p.y1) * ppm, bold = p.layer === 'HESH' && ['10', '20', '30'].includes(p.text);
+        c.font = `${bold ? 700 : 400} ${h * 1.12}px Arial, Helvetica, sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle';
+        const X = M.px((p.x1 + p.x2) / 2), Y = M.py((p.y1 + p.y2) / 2) + h * 0.04;
+        if (halo) { c.lineWidth = 2; c.lineJoin = 'round'; c.strokeText(p.text, X, Y); } else c.fillText(p.text, X, Y);
+      }
+    }
+  }
+  c.globalAlpha = 1;
+  if (S.explain) for (const [k, L] of Object.entries(LAYERS)) {
+    const x = M.px(L.badge[0]), y = M.py(L.badge[1]), r = Math.max(8, ppm * 1.05);
+    c.fillStyle = INK[k]; c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.fill(); c.strokeStyle = 'rgba(0,0,0,.5)'; c.lineWidth = 1; c.stroke();
+    c.fillStyle = '#fff'; c.font = `700 ${r * 1.1}px Inter, sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(L.key, x, y + 0.5);
+  }
+  if (estMark && S.time < estMark.until) {
+    const tg = estMark.t, b = tg.pos.clone(), tp = tg.pos.clone(); tp.y = tg.h; const q0 = toReticle(b), q1 = toReticle(tp);
+    if (q0 && q1) { const ex = extent(tg), half = Math.max(2.5, (ex.a1 - ex.a0) * 500 + 0.6); c.strokeStyle = 'rgba(255,214,90,.95)'; c.lineWidth = 2; c.setLineDash([5, 4]);
+      c.strokeRect(M.px(q0.x - half), M.py(q1.y - 0.6), M.px(q0.x + half) - M.px(q0.x - half), M.py(q0.y + 0.6) - M.py(q1.y - 0.6)); c.setLineDash([]); }
+  }
+  if (S.dev) {
+    const r = S.ammo, tb = TAB[r][S.mode];
+    c.strokeStyle = 'rgba(200,30,160,.9)'; c.lineWidth = 1.4; c.setLineDash([4, 3]); c.beginPath();
+    for (let s = 50; s <= 3600; s += 25) { const X = M.px(at(tb.X, s)), Y = M.py(at(tb.Y, s)); s === 50 ? c.moveTo(X, Y) : c.lineTo(X, Y); }
+    c.stroke(); c.setLineDash([]);
+    c.fillStyle = 'rgba(200,30,160,.95)'; c.font = `600 ${Math.max(9, ppm * 0.8)}px JetBrains Mono, monospace`; c.textAlign = 'left'; c.textBaseline = 'middle';
+    for (let s = 500; s <= 3500; s += 500) { const x = at(tb.X, s), y = at(tb.Y, s); c.beginPath(); c.arc(M.px(x), M.py(y), 2.5, 0, Math.PI * 2); c.fill(); c.fillText(String(s / 100), M.px(x) + 5, M.py(y)); }
+    for (const t of targets) {
+      const top = t.pos.clone(); top.y = t.h + 1.5; const q = toReticle(top); if (!q) continue;
+      const X = M.px(q.x), Y = M.py(q.y); if (X < 0 || X > SZ || Y < 0 || Y > SZ) continue;
+      c.fillStyle = 'rgba(255,255,255,.92)'; c.strokeStyle = 'rgba(0,0,0,.6)'; c.lineWidth = 3; c.font = `600 ${Math.max(10, ppm * 0.8)}px JetBrains Mono, monospace`;
+      const txt = `T${t.id} ${fmt(trueRange(t))} m${t.speed ? ' ' + fmt(t.speed * 3.6) + ' km/h' : ''}`; c.strokeText(txt, X + 4, Y - 6); c.fillText(txt, X + 4, Y - 6);
+    }
+  }
+}
+
+// ---------------------------------------------------------------- language switching
+function applyLang() {
+  document.querySelectorAll('[data-i18n]').forEach(el => el.textContent = T(el.dataset.i18n));
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => el.placeholder = T(el.dataset.i18nPh));
+  const rtl = lang === 'he';
+  document.getElementById('panel').dir = rtl ? 'rtl' : 'ltr';
+  document.querySelector('.mbar').dir = rtl ? 'rtl' : 'ltr';
+  document.documentElement.lang = rtl ? 'he' : 'en';
+  document.querySelectorAll('.lang button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.lang === lang)));
+  setPrompt(T(promptKey)); renderResult(S.lastRec); renderScore(); buildLegend();
+  if (S.explain) S.hover ? renderCard(S.hover) : renderCard(null, S.ammo === 'COAX' ? 'Coax' : S.ammo);
+}
+document.querySelectorAll('.lang button').forEach(b => b.onclick = () => { lang = b.dataset.lang; try { localStorage.setItem('gasLang', lang); } catch (e) {} applyLang(); });
+
+// ---------------------------------------------------------------- input
+const keys = new Set();
+const inField = e => { const t = e.target; return t && (t.tagName === 'INPUT' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA'); };
+window.addEventListener('keydown', e => {
+  if (inField(e)) { if (e.key === 'Enter' && e.target.id === 'estimate') checkEstimate(); return; }
+  const k = e.key.toLowerCase();
+  if ([' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) e.preventDefault();
+  keys.add(k); if (e.shiftKey) keys.add('shift'); if (e.ctrlKey) keys.add('control');
+  if (e.repeat) return;
+  if (k === ' ') trigger(true);
+  else if (k === '1') selectAmmo('FIN'); else if (k === '2') selectAmmo('HESH'); else if (k === '3') selectAmmo('COAX');
+  else if (k === 'e') toggleExplain(); else if (k === 'n') nextTarget(); else if (k === 'escape') setDev(false);
+  else if (S.devOpen && k === 'g') toggle('dev', 'tgDev'); else if (S.devOpen && k === 'z') toggleZoom();
+});
+window.addEventListener('keyup', e => { const k = e.key.toLowerCase(); keys.delete(k); if (!e.shiftKey) keys.delete('shift'); if (!e.ctrlKey) keys.delete('control'); if (k === ' ') trigger(false); });
+window.addEventListener('blur', () => { keys.clear(); trigger(false); });
+let drag = null;
+sightEl.addEventListener('pointerdown', e => { sightEl.focus(); drag = { x: e.clientX, y: e.clientY }; sightEl.setPointerCapture(e.pointerId); });
+sightEl.addEventListener('pointermove', e => {
+  const rect = sightEl.getBoundingClientRect(); S.mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  if (drag) { const k = (e.shiftKey || S.fine ? 0.2 : 1) / mapper().ppm / 1000; S.az += (e.clientX - drag.x) * k; S.el -= (e.clientY - drag.y) * k; clampGun(); drag = { x: e.clientX, y: e.clientY }; }
+});
+sightEl.addEventListener('pointerup', () => drag = null);
+sightEl.addEventListener('pointercancel', () => drag = null);
+sightEl.addEventListener('pointerleave', () => { S.mouse = null; });
+sightEl.addEventListener('wheel', e => { e.preventDefault(); S.el += -Math.sign(e.deltaY) * (e.shiftKey ? 0.00002 : 0.0001); clampGun(); }, { passive: false });
+const AZ_MARGIN = 0.035, EL_MIN = -0.03, EL_MAX = 0.1;   // ±2° beyond the outermost target; elevation covers 300–3,200 m
+function azLimits() {
+  if (!targets.length) return [-0.3, 0.3];
+  let lo = 1e9, hi = -1e9; for (const t of targets) { const a = Math.atan2(t.pos.x, -t.pos.z); lo = Math.min(lo, a); hi = Math.max(hi, a); }
+  return [lo - AZ_MARGIN - VIEW.cx / 1000, hi + AZ_MARGIN - VIEW.cx / 1000];
+}
+function clampGun() { const [lo, hi] = azLimits(); S.az = Math.max(lo, Math.min(hi, S.az)); S.el = Math.max(EL_MIN, Math.min(EL_MAX, S.el)); }
+function trigger(down) {
+  if (S.ammo === 'COAX') { S.firing = down; if (down && S.coaxCool <= 0) { fire('COAX'); S.coaxCool = 0.085; } return; }
+  if (!down || S.reload > 0 || S.loaded !== S.ammo) return;
+  fire(S.ammo); S.loaded = null; S.reload = RELOAD_S; S.reloadFor = S.ammo;
+}
+function selectAmmo(a) {
+  S.ammo = a; S.firing = false;
+  document.querySelectorAll('.ammo button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.ammo === a)));
+  if (a !== 'COAX' && S.loaded !== a && !(S.reload > 0 && S.reloadFor === a)) { S.reload = RELOAD_S; S.reloadFor = a; S.loaded = null; }
+  if (S.explain && !S.hover) renderCard(null, a === 'COAX' ? 'Coax' : a);
+}
+document.querySelectorAll('.ammo button').forEach(b => b.onclick = () => selectAmmo(b.dataset.ammo));
+document.querySelectorAll('[data-fire]').forEach(b => {
+  b.addEventListener('pointerdown', e => { e.preventDefault(); trigger(true); });
+  b.addEventListener('pointerup', () => trigger(false)); b.addEventListener('pointerleave', () => trigger(false));
+  b.addEventListener('keydown', e => { if (e.key === 'Enter') trigger(true); });
+});
+function toggle(name, id) { S[name] = !S[name]; document.getElementById(id).setAttribute('aria-pressed', String(S[name])); }
+function toggleExplain() {
+  S.explain = !S.explain;
+  document.getElementById('tgExplain').setAttribute('aria-pressed', String(S.explain));
+  document.getElementById('mExplain').classList.toggle('active', S.explain);
+  document.getElementById('explainSec').hidden = !S.explain;
+  if (S.explain) { buildLegend(); renderCard(null, S.ammo === 'COAX' ? 'Coax' : S.ammo); } else { S.hover = null; S.pinLayer = null; }
+}
+function toggleZoom() { S.zoom = !S.zoom; if (S.zoom) S.zoomC = S.mouse ? mapper().inv(S.mouse.x, S.mouse.y) : { x: VIEW.cx, y: VIEW.cy }; document.getElementById('tgZoom').setAttribute('aria-pressed', String(S.zoom)); }
+function setDev(on) {
+  S.devOpen = on; const d = document.getElementById('drawer'); d.classList.toggle('open', on); d.setAttribute('aria-hidden', String(!on));
+  if (!on) { S.dev = false; S.zoom = false; document.getElementById('tgDev').setAttribute('aria-pressed', 'false'); document.getElementById('tgZoom').setAttribute('aria-pressed', 'false'); }
+  if (S.explain && S.hover) renderCard(S.hover);
+}
+document.getElementById('tgExplain').onclick = toggleExplain;
+document.getElementById('mExplain').onclick = toggleExplain;
+document.getElementById('btnCheck').onclick = checkEstimate;
+document.getElementById('btnDev').onclick = () => setDev(true);
+document.getElementById('btnDevClose').onclick = () => setDev(false);
+document.getElementById('tgDev').onclick = () => toggle('dev', 'tgDev');
+document.getElementById('tgZoom').onclick = toggleZoom;
+document.getElementById('tgDisp').onclick = () => toggle('disp', 'tgDisp');
+document.getElementById('tgVib').onclick = () => toggle('vib', 'tgVib');
+document.getElementById('tgBlast').onclick = () => toggle('blast', 'tgBlast');
+document.getElementById('tgModel').onclick = e => { S.mode = S.mode === 'model' ? 'reticle' : 'model'; e.currentTarget.setAttribute('aria-pressed', String(S.mode === 'model')); document.getElementById('rMode').textContent = S.mode === 'model' ? 'physics model' : 'reticle'; };
+document.querySelectorAll('#exGrid button').forEach(b => b.onclick = () => { scenario = b.dataset.ex; document.querySelectorAll('#exGrid button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); nextTarget(); });
+document.getElementById('btnNext').onclick = nextTarget;
+document.getElementById('btnCopy').onclick = async () => {
+  const head = 'shot,time_s,round,ballistics,target,range_m,estimate_m,result,impact_x_mrad,impact_y_mrad,tof_s,miss';
+  const rows = shotLog.map(r => [r.n, r.time.toFixed(2), r.round, r.mode, r.target ? 'T' + r.target.id + ' ' + r.target.kind : '', r.range ? r.range.toFixed(0) : '', r.est || '', r.kind,
+    r.dx !== null ? r.dx.toFixed(3) : '', r.dy !== null ? r.dy.toFixed(3) : '', r.tof.toFixed(3), r.codes.join(' ')].join(','));
+  const txt = [head].concat(rows).join('\n'), note = document.getElementById('copyNote');
+  try { await navigator.clipboard.writeText(txt); note.textContent = `Copied ${rows.length} shots as CSV.`; } catch (e) { note.textContent = 'Clipboard blocked here. CSV printed to the browser console.'; console.log(txt); }
+};
+const PMAP = { pFinV: 'finV', pFinL: 'finL', pHeshV: 'heshV', pHeshBC: 'heshBC', pHeshK: 'heshK', pCoaxV: 'coaxV', pCoaxBC: 'coaxBC' };
+function syncParams() { for (const [id, k] of Object.entries(PMAP)) document.getElementById(id).value = P[k]; }
+for (const [id, k] of Object.entries(PMAP)) document.getElementById(id).addEventListener('change', e => { const v = parseFloat(e.target.value); if (isFinite(v) && v > 0) { P[k] = v; rebuild(); } else e.target.value = P[k]; });
+document.getElementById('btnReset').onclick = () => { Object.assign(P, DEFAULTS); syncParams(); rebuild(); };
+function renderBalTable() {
+  const rows = [['FIN', [800, 1200, 1600, 2000, 2400]], ['HESH', [600, 1000, 1400, 2000, 2600, 3200]], ['COAX', [400, 800, 1200, 1800]]];
+  let h = '';
+  for (const [r, Rs] of rows) for (const R of Rs) {
+    const ry = RET[r].find(a => a.R === R).y, my = modelY(r, R), miss = my - ry;
+    h += `<tr><td>${r === 'COAX' ? 'Coax' : r}</td><td>${fmt(R)}</td><td>${fmt(ry, 2)}</td><td>${fmt(my, 2)}</td><td>${fmt(my / ry, 3)}</td><td class="${Math.abs(miss) <= 0.1 ? 'pass' : 'fail'}">${miss >= 0 ? '+' : ''}${fmt(miss, 2)}</td><td>${fmt(miss * R / 1000, 2)}</td></tr>`;
+  }
+  document.querySelector('#balTbl tbody').innerHTML = h;
+}
+
+// ---------------------------------------------------------------- main loop
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now; S.time += dt;
+  const rate = (keys.has('control') ? 0.15 : keys.has('shift') ? 0.002 : 0.02) * dt;
+  if (keys.has('arrowleft')) S.az -= rate; if (keys.has('arrowright')) S.az += rate;
+  if (keys.has('arrowup')) S.el += rate; if (keys.has('arrowdown')) S.el -= rate;
+  clampGun();
+  const vib = S.vib ? 0.00005 * (Math.sin(S.time * 23.1) + 0.6 * Math.sin(S.time * 37.7 + 1.3)) : 0, vibx = S.vib ? 0.00003 * Math.sin(S.time * 29.3 + 0.4) : 0;
+  S.kick = Math.max(0, S.kick - dt * 1.6);
+  S.azEff = S.az + vibx; S.elEff = S.el + vib + (S.kick > 0 ? 0.006 * Math.sin(S.kick * Math.PI) * S.kick : 0);
+  camera.rotation.set(S.elEff, -S.azEff, 0); camera.updateMatrixWorld(true);
+  if (S.reload > 0) { S.reload -= dt; if (S.reload <= 0) { S.reload = 0; S.loaded = S.reloadFor; } }
+  S.coaxCool -= dt; if (S.firing && S.ammo === 'COAX' && S.coaxCool <= 0) { fire('COAX'); S.coaxCool = 0.085; }
+  for (const t of targets) if (t.speed && t.alive) {
+    const fx_ = Math.sin(t.yaw), fz = -Math.cos(t.yaw);
+    t.pos.x += fx_ * t.speed * dt; t.pos.z += fz * t.speed * dt;
+    const away = (t.pos.x - t.origin.x) * fx_ + (t.pos.z - t.origin.z) * fz;
+    if (away > t.travel) t.yaw += Math.PI;
+    place(t);
+  }
+  updateShells(dt); updateFx(dt);
+  S.blastA = Math.max(0, S.blastA - dt * 1.1); document.getElementById('blast').style.opacity = S.blastA.toFixed(3);
+  const M = mapper();
+  if (S.explain && S.mouse && !drag) {
+    const q = M.inv(S.mouse.x, S.mouse.y); let best = null, bd = Math.max(0.5, 8 / M.ppm);
+    for (const p of PRIMS) { if (S.pinLayer && p.layer !== S.pinLayer) continue; const d = primDist(p, q.x, q.y); if (d < bd) { bd = d; best = p; } }
+    if (best && best !== S.hover) { S.hover = best; renderCard(best); } if (!best) S.hover = null;
+  }
+  setProjection(M); renderer.render(scene, camera); drawOverlay(M);
+  // status and fire button
+  let state, armed = true, prog = 0;
+  if (S.ammo === 'COAX') state = T('coaxReady');
+  else if (S.reload > 0) { state = T('loading', { a: S.reloadFor }); armed = false; prog = 1 - S.reload / RELOAD_S; }
+  else state = T('loaded', { a: S.ammo });
+  const st = document.getElementById('sbState'); st.textContent = state; st.className = 'chip' + (armed ? ' armed' : '');
+  document.querySelectorAll('.fireBtn').forEach(b => { b.classList.toggle('loading', !armed); b.querySelector('.lbl').textContent = armed ? T('fireAmmo', { a: S.ammo }) : state; b.querySelector('.bar').style.transform = `scaleX(${armed ? 0 : prog})`; });
+  if (S.devOpen) { document.getElementById('rAz').textContent = (S.az * 1000).toFixed(1); document.getElementById('rEl').textContent = (S.el * 1000).toFixed(1); }
+  requestAnimationFrame(frame);
+}
+
+// ---------------------------------------------------------------- boot
+document.getElementById('hRef').textContent = TANK_H.toFixed(2);
+syncParams(); rebuild(); renderEng(); resize(); nextTarget(); applyLang();
+requestAnimationFrame(t => { last = t; frame(t); });
+</script>
