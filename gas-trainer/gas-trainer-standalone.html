@@ -708,8 +708,8 @@ const STR = {
     over: 'high (over)', short: 'low (short)', high: 'high', low: 'low', left: 'left', right: 'right', berm: 'low, into the cover in front', offTarget: 'just off the target',
     noTarget: 'MISS · no target near the impact', lost: 'Round lost · no impact seen',
     advice: 'Next round: move the strike {d}. Check your range.', fLower: 'lower', fHigher: 'higher', fRight: 'right', fLeft: 'left', and: ' and ',
-    tank: 'Tank', wheeled: 'Wheeled vehicle', atRange: '{t} at {r} m',
-    p_range: 'Free range: 19 targets from 300 to 3,100 m, all built to the range-estimator height. Two tanks are moving. Destroyed targets reset after 5 s. Ctrl + arrows to slew fast.',
+    tank: 'Tank', wheeled: 'Wheeled vehicle', infantry: 'Infantry', atRange: '{t} at {r} m',
+    p_range: 'Free range: 21 vehicles from 300 to 3,100 m, built to the range-estimator height (two tanks moving), and infantry at 600, 800 and 1,000 m for the coax. Destroyed targets reset after 5 s. Ctrl + arrows to slew fast.',
     p_estimate: 'Fit the tank in the range estimator, type your estimate and press Check.',
     p_stationary: 'Stationary target. Estimate the range, choose ammunition, lay the mark on the centre and fire.',
     p_moving: 'Moving target. Lay a lead mark on the target: a mark behind the centre, further out for a faster target.',
@@ -750,8 +750,8 @@ const STR = {
     over: 'גבוה (מעבר למטרה)', short: 'נמוך (לפני המטרה)', high: 'גבוה', low: 'נמוך', left: 'שמאלה', right: 'ימינה', berm: 'נמוך, לתוך הסוללה שלפני המטרה', offTarget: 'ממש ליד המטרה',
     noTarget: 'החטאה · אין מטרה ליד נקודת הפגיעה', lost: 'הפגז אבד · לא נראתה פגיעה',
     advice: 'בירייה הבאה: הזז את הפגיעה {d}. בדוק את הטווח.', fLower: 'למטה', fHigher: 'למעלה', fRight: 'ימינה', fLeft: 'שמאלה', and: ' ו',
-    tank: 'טנק', wheeled: 'רכב גלגלי', atRange: '{t} ב-{r} מ׳',
-    p_range: 'מטווח חופשי: 19 מטרות מ-300 עד 3,100 מ׳, כולן בגובה של מד-הטווח. שני טנקים בתנועה. מטרה מושמדת חוזרת אחרי 5 שנ׳. Ctrl + חצים לתנועה מהירה.',
+    tank: 'טנק', wheeled: 'רכב גלגלי', infantry: 'חי״ר', atRange: '{t} ב-{r} מ׳',
+    p_range: 'מטווח חופשי: 21 רכבים מ-300 עד 3,100 מ׳ בגובה של מד-הטווח (שני טנקים בתנועה), וחי״ר ב-600, 800 ו-1,000 מ׳ לירי מקלע. מטרה מושמדת חוזרת אחרי 5 שנ׳. Ctrl + חצים לתנועה מהירה.',
     p_estimate: 'התאם את מטרת הטנק במד-הטווח, הקלד את ההערכה ולחץ בדוק.',
     p_stationary: 'מטרה נייחת. הערך טווח, בחר תחמושת, הנח את הסימן על המרכז וירה.',
     p_moving: 'מטרה נעה. הנח סימן הובלה על המטרה: סימן מאחורי המרכז, רחוק יותר למטרה מהירה.',
@@ -995,13 +995,36 @@ function makeWheeled() {
   g.add(turret);
   return { group: g, turret, boxes: [[-1.45, 0, -3.3, 1.45, 1.8, 3.1], [-0.75, 1.8, -0.7, 0.75, H, 1.1]], h: H };
 }
+const UNIFORM = new THREE.MeshLambertMaterial({ color: 0x5a5d3f }), GEAR = new THREE.MeshLambertMaterial({ color: 0x3f4230 }), SKIN = new THREE.MeshLambertMaterial({ color: 0x8a6d55 });
+function makeSoldier() {   // 1.78 m standing rifleman
+  const f = new THREE.Group();
+  for (const sx of [-1, 1]) {
+    f.add(at3(new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.86, 0.17), UNIFORM), sx * 0.1, 0.43, 0));        // leg
+    f.add(at3(new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.6, 0.13), UNIFORM), sx * 0.27, 1.17, -0.04));    // arm
+  }
+  f.add(at3(new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.62, 0.24), UNIFORM), 0, 1.17, 0));                  // torso
+  f.add(at3(new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.36, 0.3), GEAR), 0, 1.24, 0.01));                   // vest
+  f.add(at3(new THREE.Mesh(new THREE.SphereGeometry(0.11, 10, 8), SKIN), 0, 1.6, 0));                        // head
+  const helm = new THREE.Mesh(new THREE.SphereGeometry(0.135, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2), GEAR); f.add(at3(helm, 0, 1.64, 0));
+  const rifle = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.08, 0.95), GEAR); rifle.rotation.x = 0.5; f.add(at3(rifle, 0.12, 1.1, -0.22));
+  return f;
+}
+function makeInfantry(n) {
+  const g = new THREE.Group(), boxes = [], figs = [];
+  for (let i = 0; i < n; i++) {
+    const x = (i - (n - 1) / 2) * (3 + Math.random() * 2.5), z = (Math.random() - 0.5) * 6, f = makeSoldier();
+    f.position.set(x, 0, z); f.rotation.y = (Math.random() - 0.5) * 1.2 + Math.PI; g.add(f); figs.push(f);
+    boxes.push([x - 0.3, 0, z - 0.3, x + 0.3, 1.78, z + 0.3]);
+  }
+  return { group: g, figs, boxes, h: 1.78 };
+}
 let targets = [], tid = 0;
 function addTarget(kind, range, azDeg, opts = {}) {
-  const a = azDeg * Math.PI / 180, mk = kind === 'wheeled' ? makeWheeled() : makeTank();
+  const a = azDeg * Math.PI / 180, mk = kind === 'infantry' ? makeInfantry(opts.n || 4) : kind === 'wheeled' ? makeWheeled() : makeTank();
   // facing: 'front' = gun pointing at us, 'side' = broadside, 'oblique' = three-quarter
   const face = opts.face || 'oblique', yaw = a + (face === 'front' ? Math.PI : face === 'side' ? Math.PI / 2 * (opts.flip ? -1 : 1) : Math.PI * (opts.flip ? 0.75 : 1.25));
   mk.group.traverse(o => { if (o.isMesh) o.userData.mat0 = o.material; });
-  const t = { id: ++tid, kind, obj: mk.group, turret: mk.turret, boxes: mk.boxes, alive: true, hits: 0, h: mk.h, yaw, yaw0: yaw,
+  const t = { id: ++tid, kind, obj: mk.group, turret: mk.turret, figs: mk.figs, perBox: kind === 'infantry', boxAlive: mk.boxes.map(() => true), boxes: mk.boxes, alive: true, hits: 0, h: mk.h, yaw: kind === 'infantry' ? a : yaw, yaw0: kind === 'infantry' ? a : yaw,
     pos: new THREE.Vector3(Math.sin(a) * range, 0, -Math.cos(a) * range), speed: opts.speed || 0, travel: opts.travel || 0,
     born: S.time, eng: null, killedAt: null };
   t.origin = t.pos.clone();
@@ -1012,7 +1035,9 @@ function place(t) { t.obj.position.copy(t.pos); t.obj.rotation.y = -t.yaw; }
 function resetTarget(t) {
   t.alive = true; t.hits = 0; t.killedAt = null; t.eng = null; t.born = S.time; t.yaw = t.yaw0; t.pos.copy(t.origin);
   t.obj.traverse(o => { if (o.isMesh && o.userData.mat0) o.material = o.userData.mat0; });
-  t.turret.rotation.set(0, 0, 0); t.turret.position.set(0, 0, 0); place(t);
+  if (t.turret) { t.turret.rotation.set(0, 0, 0); t.turret.position.set(0, 0, 0); }
+  if (t.figs) { t.boxAlive = t.boxes.map(() => true); t.figs.forEach(f => { f.rotation.x = 0; f.position.y = 0; }); }
+  place(t);
 }
 function clearTargets() { for (const t of targets) scene.remove(t.obj); targets = []; }
 const trueRange = t => Math.hypot(t.pos.x - MUZZLE.x, t.pos.z - MUZZLE.z);
@@ -1047,8 +1072,9 @@ function updateFx(dt) {
   // destroyed targets burn and smoke, then reset after 5 s (free range)
   for (const t of targets) {
     if (!t.alive) {
-      const age = S.time - t.killedAt, burning = age < 14;
+      const age = S.time - t.killedAt, burning = age < 14 && t.kind !== 'infantry';
       if (scenario === 'range' && age > 5) { resetTarget(t); continue; }
+      if (t.kind === 'infantry') continue;
       if (burning && S.time - (t.lastFlame || 0) > 0.08) { t.lastFlame = S.time; const p = t.pos.clone(); p.x += (Math.random() - 0.5) * 3; p.z += (Math.random() - 0.5) * 2; p.y = 1.2; puff(p, TEX.flame, 1.4, 3.4, 0.6, { add: true, rise: 3 }); }
       if (age < 40 && S.time - (t.lastSmoke || 0) > (burning ? 0.16 : 0.5)) { t.lastSmoke = S.time; const p = t.pos.clone(); p.y = 1.5; puff(p, TEX.smoke, 2.5, 13, 8, { rise: 4.5, drift: 1.2, alpha: burning ? 0.85 : 0.4 }); }
     }
@@ -1099,7 +1125,7 @@ function updateShells(dt) {
     let best = null;
     for (const t of targets) {
       const l0 = localOf(t.pos, t.yaw, sh.prev), l1 = localOf(t.pos, t.yaw, p);
-      t.boxes.forEach((b, bi) => { if (!t.alive) return; const u = segBox(l0, l1, b); if (u !== null && (!best || u < best.u)) best = { u, t, bi }; });
+      t.boxes.forEach((b, bi) => { if (t.perBox ? !t.boxAlive[bi] : !t.alive) return; const u = segBox(l0, l1, b); if (u !== null && (!best || u < best.u)) best = { u, t, bi }; });
     }
     const gh = groundH(p.x, p.z); let gu = null;
     if (p.y <= gh) { const g0 = sh.prev.y - groundH(sh.prev.x, sh.prev.z); gu = g0 / (g0 - (p.y - gh)); }
@@ -1145,9 +1171,16 @@ function finishShell(sh, hp, hitT, info) {
   if (near) engage(near, sh, kind);
   S.lastRec = rec; renderResult(rec, main);
 }
-function splash(hp) {}
+function splash(hp) {   // HESH knocks down soldiers within 8 m
+  for (const t of targets) if (t.kind === 'infantry' && t.alive) t.figs.forEach((f, i) => { if (t.boxAlive[i] && f.getWorldPosition(new THREE.Vector3()).distanceTo(hp) < 8) dropSoldier(t, i); });
+}
+function dropSoldier(t, i) {
+  t.boxAlive[i] = false; const f = t.figs[i]; f.rotation.x = Math.PI / 2 * (Math.random() < 0.5 ? 1 : -1); f.position.y = 0.15;
+  if (t.boxAlive.every(a => !a)) { t.alive = false; t.killedAt = S.time; S.kills++; renderScore(); }
+}
 function applyHit(t, round, info, hp) {
   t.hits++;
+  if (t.kind === 'infantry') { dropSoldier(t, info.bi); if (round !== 'COAX') splash(hp); return; }
   if (round === 'COAX') { puff(hp, TEX.flash, 0.3, 0.8, 0.12, { add: true }); if (t.kind === 'wheeled' && t.hits >= 5) kill(t); return; }
   kill(t);
 }
@@ -1227,7 +1260,8 @@ const FREE_LAYOUT = [
   ['wheeled', 700, -2.5, { face: 'oblique', flip: true }], ['tank', 750, 14, { face: 'oblique' }], ['tank', 900, 5.5, { face: 'side' }], ['wheeled', 1000, -9, { face: 'front' }],
   ['tank', 1100, 11, { face: 'front' }], ['tank', 1250, -4.5, { face: 'oblique', flip: true }], ['wheeled', 1300, 16, { face: 'side', flip: true }], ['tank', 1450, 0.8, { face: 'side' }],
   ['tank', 1650, -15, { face: 'oblique' }], ['tank', 1850, 7.5, { face: 'front' }], ['tank', 2050, -6.5, { face: 'side' }], ['tank', 2350, 3.5, { face: 'oblique', flip: true }],
-  ['tank', 2700, -10.5, { face: 'front' }], ['tank', 3100, 12.5, { face: 'side' }], ['tank', 2900, -1.8, { face: 'oblique' }]];
+  ['tank', 2700, -10.5, { face: 'front' }], ['tank', 3100, 12.5, { face: 'side' }], ['tank', 2900, -1.8, { face: 'oblique' }],
+  ['infantry', 600, -4.2, { n: 4 }], ['infantry', 800, 9.8, { n: 5 }], ['infantry', 1000, 2.6, { n: 4 }], ['infantry', 620, 12.2, { n: 3 }], ['infantry', 980, -12.4, { n: 3 }]];
 const MOVERS = [[850, -1.2, 20], [1700, 9.5, 30]];
 function nextTarget() {
   clearTimeout(nextTimer); clearTargets(); document.getElementById('estResult').hidden = true;
@@ -1239,7 +1273,8 @@ function nextTarget() {
   } else if (scenario === 'estimate') {
     addTarget('tank', jit(pick([600, 700, 800, 1000, 1200, 1400, 1600, 1800, 2000]), 60), azNow + r(-1.5, 1.5), { face: face(), flip: Math.random() < 0.5 }); promptKey = 'p_estimate';
   } else if (scenario === 'stationary') {
-    addTarget(Math.random() < 0.8 ? 'tank' : 'wheeled', jit(pick([300, 400, 500, 600, 700, 800, 1000, 1200, 1400, 1600, 1800, 2000, 2300, 2600, 3000]), 40), azNow + r(-2, 2), { face: face(), flip: Math.random() < 0.5 }); promptKey = 'p_stationary';
+    const k = Math.random(); if (k < 0.2) addTarget('infantry', pick([600, 800, 1000]), azNow + r(-2, 2), { n: 4 });
+    else addTarget(k < 0.85 ? 'tank' : 'wheeled', jit(pick([300, 400, 500, 600, 700, 800, 1000, 1200, 1400, 1600, 1800, 2000, 2300, 2600, 3000]), 40), azNow + r(-2, 2), { face: face(), flip: Math.random() < 0.5 }); promptKey = 'p_stationary';
   } else {
     addTarget('tank', jit(pick([300, 500, 700, 900, 1200, 1500, 1800]), 40), azNow + r(-1.5, 1.5), { face: 'side', flip: Math.random() < 0.5, speed: r(10, 35) / 3.6, travel: 200 }); promptKey = 'p_moving';
   }
@@ -1254,6 +1289,7 @@ function checkEstimate() {
   const sx0 = 4.5, sx1 = 18.4, sy0 = -4.6, sy1 = 0.4;
   let best = null, bd = 1e9;
   for (const x of targets) {
+    if (x.kind === 'infantry') continue;
     const c = x.pos.clone(); c.y = x.h / 2; const q = toReticle(c); if (!q) continue;
     const dS = Math.hypot(Math.max(sx0 - q.x, 0, q.x - sx1), Math.max(sy0 - q.y, 0, q.y - sy1));
     const dC = Math.hypot(Math.max(Math.abs(q.x - 1) - 2, 0), Math.max(-6 - q.y, 0, q.y - 80));
@@ -1366,12 +1402,13 @@ function drawOverlay(M) {
     for (let y = Math.ceil(y0 / 5) * 5; y <= y1; y += 5) c.fillText(String(y), M.px(v.cx - v.r * 0.6), M.py(y) - 2);
     for (let x = Math.ceil(x0 / 5) * 5; x <= x1; x += 5) c.fillText(String(x), M.px(x) + 2, M.py(v.cy + v.r * 0.55));
   }
+  if (S.explain) { c.save(); c.beginPath(); c.arc(SZ / 2, SZ / 2, SZ / 2, 0, Math.PI * 2); c.clip(); c.fillStyle = 'rgba(244,245,240,.34)'; c.fillRect(0, 0, SZ, SZ); c.restore(); }
   const hl = S.explain && S.hover ? new Set(markCluster(S.hover).map(p => p.id)) : null;
   for (const p of PRIMS) {
     let col = '#0b0b0a', w = Math.max(1, LINE_W * ppm);
     c.globalAlpha = 1;
-    if (S.explain) { col = INK_X[p.layer]; if (S.pinLayer && S.pinLayer !== p.layer) c.globalAlpha = 0.22; if (hl && hl.has(p.id)) w *= 2.4; }
-    const passes = S.explain ? [['rgba(0,0,0,.55)', w + 1.6], [col, w]] : [[col, w]];
+    if (S.explain) { col = INK[p.layer]; if (S.pinLayer && S.pinLayer !== p.layer) c.globalAlpha = 0.22; if (hl && hl.has(p.id)) w *= 2.4; }
+    const passes = S.explain ? [['rgba(255,255,255,.3)', w + 1.2], [col, w]] : [[col, w]];
     for (const [pc, pw] of passes) {
       const halo = passes.length > 1 && pc !== col;
       c.strokeStyle = pc; c.fillStyle = pc; c.lineWidth = pw; c.lineCap = 'butt';
@@ -1453,7 +1490,13 @@ sightEl.addEventListener('pointerup', () => drag = null);
 sightEl.addEventListener('pointercancel', () => drag = null);
 sightEl.addEventListener('pointerleave', () => { S.mouse = null; });
 sightEl.addEventListener('wheel', e => { e.preventDefault(); S.el += -Math.sign(e.deltaY) * (e.shiftKey ? 0.00002 : 0.0001); clampGun(); }, { passive: false });
-function clampGun() { S.el = Math.max(-0.17, Math.min(0.35, S.el)); }
+const AZ_MARGIN = 0.035, EL_MIN = -0.03, EL_MAX = 0.1;   // ±2° beyond the outermost target; elevation covers 300–3,200 m
+function azLimits() {
+  if (!targets.length) return [-0.3, 0.3];
+  let lo = 1e9, hi = -1e9; for (const t of targets) { const a = Math.atan2(t.pos.x, -t.pos.z); lo = Math.min(lo, a); hi = Math.max(hi, a); }
+  return [lo - AZ_MARGIN - VIEW.cx / 1000, hi + AZ_MARGIN - VIEW.cx / 1000];
+}
+function clampGun() { const [lo, hi] = azLimits(); S.az = Math.max(lo, Math.min(hi, S.az)); S.el = Math.max(EL_MIN, Math.min(EL_MAX, S.el)); }
 function trigger(down) {
   if (S.ammo === 'COAX') { S.firing = down; if (down && S.coaxCool <= 0) { fire('COAX'); S.coaxCool = 0.085; } return; }
   if (!down || S.reload > 0 || S.loaded !== S.ammo) return;
