@@ -1,7 +1,7 @@
 <title>GAS Gunnery Trainer</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@400;500;600;700&family=IBM+Plex+Sans+Hebrew:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Heebo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
 <style>
 /* Layout: the eyepiece dominates; beside it a step-ordered control column (range → ammunition → fire → result).
    Developer tools live in a separate drawer. Single dark look by choice: a sight housing. */
@@ -9,8 +9,8 @@
   --housing:#0c0f0d; --panel:#151a17; --panel-2:#1d2420; --panel-3:#252e29; --line:#2c3630;
   --fg:#e3e8e1; --muted:#93a096; --accent:#e2a63b; --ok:#62c184; --bad:#ef6f55; --fire:#a8331f;
   --c-zero:#f2f2f2; --c-stadia:#a274d6; --c-fin:#4f86e0; --c-hesh:#e07a2e; --c-coax:#2fae88; --c-lead:#9aa3ad; --c-unk:#e0503f;
-  --f-ui:"IBM Plex Sans Condensed","IBM Plex Sans Hebrew","Arial Narrow",system-ui,sans-serif;
-  --f-data:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --f-ui:"Inter","Heebo",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-data:"JetBrains Mono",ui-monospace,Menlo,monospace;
   color-scheme:dark;
 }
 html,body{height:100%}
@@ -19,7 +19,7 @@ body{background:var(--housing);color:var(--fg);font-family:var(--f-ui);font-size
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 button,input,select{font:inherit;color:inherit}
-[dir=rtl]{font-family:"IBM Plex Sans Hebrew",var(--f-ui)}
+[dir=rtl]{font-family:"Heebo","Inter",system-ui,sans-serif}
 .app{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:16px;height:100%;min-height:0}
 
 /* sight */
@@ -47,7 +47,7 @@ button,input,select{font:inherit;color:inherit}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:auto;min-height:0;display:flex;flex-direction:column}
 .head{padding:14px 16px 12px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
 .head .top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
-.head h1{font-size:20px;font-weight:700;margin:0;line-height:1.15;text-wrap:balance}
+.head h1{font-size:20px;font-weight:700;letter-spacing:-.01em;margin:0;line-height:1.15;text-wrap:balance}
 .head p{margin:3px 0 0;color:var(--muted);font-size:12.5px}
 .lang{display:flex;border:1px solid var(--line);border-radius:4px;overflow:hidden;flex:none}
 .lang button{background:var(--panel-2);border:0;padding:5px 9px;cursor:pointer;font-size:12.5px;font-weight:600;color:var(--muted)}
@@ -67,6 +67,10 @@ button,input,select{font:inherit;color:inherit}
 .btn{background:var(--panel-2);border:1px solid var(--line);border-radius:6px;padding:9px 14px;cursor:pointer;font-weight:600}
 .btn:hover{background:var(--panel-3)}
 button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.estResult{background:var(--housing);border:1px solid var(--line);border-radius:6px;padding:9px 11px;font-size:13px;display:flex;flex-direction:column;gap:2px}
+.estResult .v{font-size:16px;font-weight:700}
+.estResult .v.ok{color:var(--ok)} .estResult .v.bad{color:var(--bad)}
+.estResult .s{color:var(--muted);font-size:12.5px}
 .ammo{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .ammo button{background:var(--panel-2);border:1px solid var(--line);border-radius:6px;padding:10px 6px 8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;min-height:66px}
 .ammo button .n{font-weight:700;font-size:17px;letter-spacing:.02em}
@@ -197,6 +201,7 @@ td.fail{color:var(--bad)} td.pass{color:var(--ok)}
         <input type="number" id="estimate" min="100" max="5000" step="50" data-i18n-ph="estPh" aria-label="Range estimate in metres">
         <button class="btn" id="btnCheck" data-i18n="check"></button>
       </div>
+      <div class="estResult" id="estResult" hidden></div>
     </div>
 
     <div class="step weapon">
@@ -696,14 +701,14 @@ const STR = {
     over: 'high (over)', short: 'low (short)', high: 'high', low: 'low', left: 'left', right: 'right', berm: 'low, into the cover in front', offTarget: 'just off the target',
     noTarget: 'MISS · no target near the impact', lost: 'Round lost · no impact seen',
     advice: 'Next round: move the strike {d}. Check your range.', fLower: 'lower', fHigher: 'higher', fRight: 'right', fLeft: 'left', and: ' and ',
-    tank: 'Tank', truck: 'Truck', infantry: 'Infantry', atRange: '{t} at {r} m',
-    p_range: 'Free range: tank, truck and infantry target boards from 250 to 2,900 m. One tank is behind a berm, one is moving. Ctrl + arrows to slew fast.',
-    p_estimate: 'Fit the tank board in the range estimator, type your estimate and press Check.',
+    tank: 'Tank', wheeled: 'Wheeled vehicle', atRange: '{t} at {r} m',
+    p_range: 'Free range: 19 targets from 300 to 3,100 m, all built to the range-estimator height. Two tanks are moving. Destroyed targets reset after 5 s. Ctrl + arrows to slew fast.',
+    p_estimate: 'Fit the tank in the range estimator, type your estimate and press Check.',
     p_stationary: 'Stationary target. Estimate the range, choose ammunition, lay the mark on the centre and fire.',
     p_moving: 'Moving target. Lay a lead mark on the target: a mark behind the centre, further out for a faster target.',
-    p_destroyed: 'Target destroyed with {n} round(s) in {s} s. Next target in 4 s.',
+    p_destroyed: 'Target destroyed with {n} round(s) in {s} s. Next target in 5 s.',
     p_needEst: 'Type a range in metres first, for example 1200.',
-    p_est: '{t}: true range {R} m. Your estimate {E} m is {p}% {dir}. {v}', estLong: 'long', estShort: 'short', estGood: 'Good estimate.', estBad: 'Re-check the fit.',
+    estHead: '{p}% {dir}', estExact: 'Spot on', estSub: 'Measured target: {t} · true range {R} m · your estimate {E} m', estLong: 'long', estShort: 'short', estGood: 'Good estimate (within 10%).', estBad: 'Re-check the fit: tank bottom on the long line, turret top on a dash.', estNone: 'No target near the range estimator. Put a target in the stadia (top right of the sight) and check again.',
     L_Zero: 'Reference circle (zero)', L_Stadia: 'Range estimator', L_FIN: 'Round 1 · FIN (KE)', L_HESH: 'Round 2 · HESH', L_Coax: 'Coax range scale', L_Lead: 'Lead marks', L_Unknown: 'Bottom cross',
     T_Zero: 'The zero point every mark is measured from.',
     T_Stadia: 'Tank bottom on the long line, turret top on a dash. The number above = range in 100s of m. Example: turret meets the "12" dash → 1,200 m.',
@@ -738,14 +743,14 @@ const STR = {
     over: 'גבוה (מעבר למטרה)', short: 'נמוך (לפני המטרה)', high: 'גבוה', low: 'נמוך', left: 'שמאלה', right: 'ימינה', berm: 'נמוך, לתוך הסוללה שלפני המטרה', offTarget: 'ממש ליד המטרה',
     noTarget: 'החטאה · אין מטרה ליד נקודת הפגיעה', lost: 'הפגז אבד · לא נראתה פגיעה',
     advice: 'בירייה הבאה: הזז את הפגיעה {d}. בדוק את הטווח.', fLower: 'למטה', fHigher: 'למעלה', fRight: 'ימינה', fLeft: 'שמאלה', and: ' ו',
-    tank: 'טנק', truck: 'משאית', infantry: 'חי״ר', atRange: '{t} ב-{r} מ׳',
-    p_range: 'מטווח חופשי: מטרות טנק, משאית וחי״ר מ-250 עד 2,900 מ׳. טנק אחד מאחורי סוללה, אחד בתנועה. Ctrl + חצים לתנועה מהירה.',
+    tank: 'טנק', wheeled: 'רכב גלגלי', atRange: '{t} ב-{r} מ׳',
+    p_range: 'מטווח חופשי: 19 מטרות מ-300 עד 3,100 מ׳, כולן בגובה של מד-הטווח. שני טנקים בתנועה. מטרה מושמדת חוזרת אחרי 5 שנ׳. Ctrl + חצים לתנועה מהירה.',
     p_estimate: 'התאם את מטרת הטנק במד-הטווח, הקלד את ההערכה ולחץ בדוק.',
     p_stationary: 'מטרה נייחת. הערך טווח, בחר תחמושת, הנח את הסימן על המרכז וירה.',
     p_moving: 'מטרה נעה. הנח סימן הובלה על המטרה: סימן מאחורי המרכז, רחוק יותר למטרה מהירה.',
-    p_destroyed: 'המטרה הושמדה ב-{n} פגזים תוך {s} שנ׳. מטרה הבאה בעוד 4 שנ׳.',
+    p_destroyed: 'המטרה הושמדה ב-{n} פגזים תוך {s} שנ׳. מטרה הבאה בעוד 5 שנ׳.',
     p_needEst: 'הקלד קודם טווח במטרים, למשל 1200.',
-    p_est: '{t}: הטווח האמיתי {R} מ׳. ההערכה שלך {E} מ׳, {p}% {dir}. {v}', estLong: 'ארוך מדי', estShort: 'קצר מדי', estGood: 'הערכה טובה.', estBad: 'בדוק שוב את ההתאמה.',
+    estHead: '{p}% {dir}', estExact: 'בדיוק', estSub: 'המטרה שנמדדה: {t} · טווח אמיתי {R} מ׳ · ההערכה שלך {E} מ׳', estLong: 'ארוך מדי', estShort: 'קצר מדי', estGood: 'הערכה טובה (עד 10%).', estBad: 'בדוק שוב את ההתאמה: תחתית הטנק על הקו הארוך, גג הצריח על מקף.', estNone: 'אין מטרה ליד מד-הטווח. הכנס מטרה לסטדיה (בצד ימין למעלה בכוונת) ובדוק שוב.',
     L_Zero: 'עיגול ייחוס (אפס)', L_Stadia: 'מד-טווח', L_FIN: 'תחמושת 1 · FIN', L_HESH: 'תחמושת 2 · HESH', L_Coax: 'סולם מקלע (COAX)', L_Lead: 'סימני הובלה', L_Unknown: 'צלב תחתון',
     T_Zero: 'נקודת האפס שממנה נמדד כל סימן.',
     T_Stadia: 'תחתית הטנק על הקו הארוך, גג הצריח על מקף. המספר מעל = הטווח במאות מטרים. דוגמה: הצריח פוגש את המקף "12" ← 1,200 מ׳.',
@@ -898,6 +903,7 @@ function groundColor(x, z, out) {
   const f = fieldOf(x, z), h = hash(f.i, f.j);
   out.copy(FIELD_COLS[Math.floor(h * FIELD_COLS.length)]);
   out.multiplyScalar(0.9 + 0.18 * fbm(x / 60, z / 60, 3));
+  const d = Math.hypot(x, z); if (d > 4600) { const w = Math.min(1, (d - 4600) / 1500) * (fbm(x / 900 + 5, z / 900, 4) > 0.48 ? 1 : 0.25); out.lerp(new THREE.Color(0x3e5a2c), w * 0.85); }
   const track = Math.abs(z + 1450 + 260 * Math.sin(x / 900)); if (track < 6) out.lerp(new THREE.Color(0xa08a64), 0.8 * (1 - track / 6));
   return out;
 }
@@ -921,119 +927,87 @@ function terrainMesh(x0, x1, z0, z1, sx, sz, inner) {
 terrainMesh(-13000, 13000, -13000, 13000, 220, 220, false);
 terrainMesh(-4000, 4000, -4300, 60, 480, 262, true);
 
-// vegetation: bright, round, with brown trunks — never the dark flat shape of a target board
-const VEG = { crownA: new THREE.MeshLambertMaterial({ color: 0x47702a }), crownB: new THREE.MeshLambertMaterial({ color: 0x568030 }), crownC: new THREE.MeshLambertMaterial({ color: 0x3b6324 }),
-  trunk: new THREE.MeshLambertMaterial({ color: 0x6a4f35 }), shrub: new THREE.MeshLambertMaterial({ color: 0x6d9139 }) };
-let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-function scatter(geo, mat, list, f) {
-  if (!list.length) return;
-  const inst = new THREE.InstancedMesh(geo, mat, list.length), m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler();
-  list.forEach((it, k) => { const p = f(it); e.set(0, rnd() * 6.28, 0); q.setFromEuler(e); m.compose(p.pos, q, p.scale); inst.setMatrixAt(k, m); });
-  scene.add(inst);
-}
-const roundGeo = (() => { const g = new THREE.IcosahedronGeometry(1, 2), p = g.attributes.position; for (let i = 0; i < p.count; i++) { const k = 0.88 + 0.24 * hash(p.getX(i) * 3.1, p.getY(i) * 5.7 + p.getZ(i)); p.setXYZ(i, p.getX(i) * k, p.getY(i) * k, p.getZ(i) * k); } g.computeVertexNormals(); return g; })();
-const LAYOUT_SPOTS = [];
-const openLane = (x, z) => { const a = Math.abs(Math.atan2(x, -z)), r = Math.hypot(x, z); return a > 0.3 || r > 3150; };
-const clearOf = (x, z, d) => !LAYOUT_SPOTS.some(([sx, sz]) => Math.hypot(x - sx, z - sz) < d);
-function buildVegetation() {
-  const trees = [];
-  // hedgerows with trees along field boundaries, from 1.2 km out
-  for (let i = -14; i <= 14; i++) for (let j = -22; j <= 1; j++) {
-    if (hash(i * 3.3, j * 7.1) > 0.33) continue;
-    const alongU = hash(i, j * 2.2) > 0.5, n = alongU ? FCX / 11 : FCZ / 11;
-    for (let k = 0; k < n; k++) {
-      const u = alongU ? i * FCX + k * 11 : i * FCX, v = alongU ? j * FCZ : j * FCZ + k * 11;
-      const x = u * Math.cos(FA) + v * Math.sin(FA), z = -u * Math.sin(FA) + v * Math.cos(FA), r = Math.hypot(x, z);
-      if (r < 1200 || r > 4200 || z > -400 || !clearOf(x, z, 40) || rnd() < 0.25 || !openLane(x, z)) continue;
-      trees.push([x + (rnd() - 0.5) * 5, z + (rnd() - 0.5) * 5, 8 + rnd() * 7]);
-    }
-  }
-  // copses and single trees
-  for (let k = 0; k < 160; k++) {
-    const r = 900 + rnd() * 3300, a = (rnd() - 0.5) * 1.8, x = Math.sin(a) * r, z = -Math.cos(a) * r;
-    if (!clearOf(x, z, 45) || !openLane(x, z)) continue;
-    const n = rnd() < 0.3 ? 1 : 3 + Math.floor(rnd() * 6);
-    for (let m = 0; m < n; m++) trees.push([x + (rnd() - 0.5) * 30, z + (rnd() - 0.5) * 30, 7 + rnd() * 8]);
-  }
-  const mats = [VEG.crownA, VEG.crownB, VEG.crownC];
-  mats.forEach((mat, mi) => {
-    const sub = trees.filter((_, k) => k % 3 === mi);
-    scatter(roundGeo, mat, sub, ([x, z, h]) => ({ pos: new THREE.Vector3(x, h * 0.66, z), scale: new THREE.Vector3(h * 0.36, h * 0.38, h * 0.36) }));
-  });
-  scatter(new THREE.CylinderGeometry(0.18, 0.28, 1, 6), VEG.trunk, trees, ([x, z, h]) => ({ pos: new THREE.Vector3(x, h * 0.25, z), scale: new THREE.Vector3(1, h * 0.5, 1) }));
-  // low shrubs: small, light green, well away from targets
-  const shrubs = [];
-  while (shrubs.length < 260) { const r = 350 + rnd() * 3700, a = (rnd() - 0.5) * 1.7, x = Math.sin(a) * r, z = -Math.cos(a) * r; if (clearOf(x, z, 35)) shrubs.push([x, z, 0.35 + rnd() * 0.45]); }
-  scatter(roundGeo, VEG.shrub, shrubs, ([x, z, s]) => ({ pos: new THREE.Vector3(x, s * 0.5, z), scale: new THREE.Vector3(s * 1.8, s, s * 1.6) }));
-}
+// no trees or bushes in the firing area: nothing on the range may be mistaken for a target
 
-// ---------------------------------------------------------------- targets: range boards (flat silhouettes on posts, facing the gun)
-const MAT = {
-  board: new THREE.MeshLambertMaterial({ color: 0x2a2c26, side: THREE.DoubleSide }),
-  dead: new THREE.MeshLambertMaterial({ color: 0x141312, side: THREE.DoubleSide }),
-  post: new THREE.MeshLambertMaterial({ color: 0x6b5a44 }),
-  berm: new THREE.MeshLambertMaterial({ color: 0x8b7a55 }),
-  rail: new THREE.MeshLambertMaterial({ color: 0x55534c })
-};
-function shapeFrom(pts) { const s = new THREE.Shape(); pts.forEach(([x, y], i) => i ? s.lineTo(x, y) : s.moveTo(x, y)); return s; }
-function circleShape(x, y, r) { const s = new THREE.Shape(); s.absarc(x, y, r, 0, Math.PI * 2, false); return s; }
-const SIL = {
-  tankSide(H) {
-    return { shapes: [shapeFrom([[-3.4, 0], [3.4, 0], [3.85, 0.55], [3.6, 0.95], [3.75, 1.45], [-3.7, 1.45], [-3.9, 0.6]]),
-      shapeFrom([[-2.0, 1.45], [1.5, 1.45], [1.95, 1.75], [1.6, H], [-1.65, H], [-2.15, 1.8]]),
-      shapeFrom([[1.8, 1.7], [6.3, 1.74], [6.3, 1.86], [1.8, 1.88]])],
-      boxes: [[-3.9, 0, -0.3, 3.85, 1.45, 0.3], [-2.15, 1.45, -0.3, 1.95, H, 0.3]], w: 7.8 };
-  },
-  tankFront(H) {
-    return { shapes: [shapeFrom([[-1.85, 0], [1.85, 0], [1.85, 1.1], [1.65, 1.45], [-1.65, 1.45], [-1.85, 1.1]]),
-      shapeFrom([[-1.35, 1.45], [1.35, 1.45], [1.15, H], [-1.15, H]])],
-      boxes: [[-1.85, 0, -0.3, 1.85, 1.45, 0.3], [-1.35, 1.45, -0.3, 1.35, H, 0.3]], w: 3.7 };
-  },
-  truck() {
-    return { shapes: [shapeFrom([[-3.5, 0.45], [1.3, 0.45], [1.3, 2.9], [-3.5, 2.9]]), shapeFrom([[1.45, 0.45], [3.5, 0.45], [3.5, 1.9], [2.95, 2.55], [1.45, 2.55]]),
-      circleShape(-2.6, 0.5, 0.5), circleShape(-1.45, 0.5, 0.5), circleShape(2.6, 0.5, 0.5)],
-      boxes: [[-3.5, 0, -0.3, 3.5, 2.9, 0.3]], w: 7 };
-  },
-  man() {
-    return { shapes: [shapeFrom([[-0.27, 1.48], [0.27, 1.48], [0.23, 0.85], [0.19, 0], [0.05, 0], [0, 0.72], [-0.05, 0], [-0.19, 0], [-0.23, 0.85]]), circleShape(0, 1.62, 0.12)],
-      boxes: [[-0.27, 0, -0.3, 0.27, 1.75, 0.3]], w: 0.55 };
+// ---------------------------------------------------------------- targets: 3D tanks and wheeled vehicles, all at the stadia reference height
+function camoTex() {
+  const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d');
+  g.fillStyle = '#4d5435'; g.fillRect(0, 0, 256, 256);
+  let sd = 9; const r = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
+  for (const [col, n, size] of [['#363d27', 12, 26], ['#5f5338', 9, 20], ['#22241b', 6, 13]]) {
+    g.fillStyle = col;
+    for (let i = 0; i < n; i++) { g.beginPath(); const cx = r() * 256, cy = r() * 256, rad = size * (0.6 + r()); for (let k = 0; k <= 12; k++) { const a = k / 12 * Math.PI * 2, rr = rad * (0.65 + r() * 0.5); g.lineTo(cx + Math.cos(a) * rr * 1.6, cy + Math.sin(a) * rr); } g.fill(); }
   }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t;
+}
+const CAMO = camoTex();
+const MAT = {
+  hull: new THREE.MeshLambertMaterial({ map: CAMO }), steel: new THREE.MeshLambertMaterial({ color: 0x3b3f31 }),
+  track: new THREE.MeshLambertMaterial({ color: 0x2b2a26 }), wheel: new THREE.MeshLambertMaterial({ color: 0x33352d }),
+  tyre: new THREE.MeshLambertMaterial({ color: 0x1f1f1d }), dead: new THREE.MeshLambertMaterial({ color: 0x1b1a17 })
 };
-function boardGroup(sil) {
-  const g = new THREE.Group(); // pivots at the base so it can fall back
-  const geo = new THREE.ShapeGeometry(sil.shapes); const m = new THREE.Mesh(geo, MAT.board); m.position.z = 0.02; g.add(m);
-  const pw = Math.min(sil.w * 0.3, 1.6);
-  for (const sx of [-pw, pw]) { const p = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.9, 0.1), MAT.post); p.position.set(sx, 0.45, -0.08); g.add(p); }
-  return g;
+const shadowTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'), gr = g.createRadialGradient(32, 32, 6, 32, 32, 32); gr.addColorStop(0, 'rgba(0,0,0,.5)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })();
+const SHADOW = new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, depthWrite: false });
+function shapeFrom(pts) { const s = new THREE.Shape(); pts.forEach(([x, y], i) => i ? s.lineTo(x, y) : s.moveTo(x, y)); return s; }
+// side profile [forward, up] extruded across the width; forward = local -z
+function sideExtrude(profile, width, mat, x0 = 0) { const g = new THREE.ExtrudeGeometry(shapeFrom(profile), { depth: width, bevelEnabled: false }); g.rotateY(Math.PI / 2); g.translate(x0 - width / 2, 0, 0); return new THREE.Mesh(g, mat); }
+// top-view outline [across, forward] extruded upwards
+function topExtrude(outline, y0, h, mat) { const g = new THREE.ExtrudeGeometry(shapeFrom(outline), { depth: h, bevelEnabled: false }); g.rotateX(-Math.PI / 2); g.translate(0, y0, 0); return new THREE.Mesh(g, mat); }
+function cyl(r0, r1, len, mat, seg = 12) { return new THREE.Mesh(new THREE.CylinderGeometry(r0, r1, len, seg), mat); }
+function at3(m, x, y, z) { m.position.set(x, y, z); return m; }
+function shadowMesh(w, l) { const s = new THREE.Mesh(new THREE.PlaneGeometry(w, l), SHADOW); s.rotation.x = -Math.PI / 2; s.position.y = 0.03; s.userData.keep = true; return s; }
+function makeTank() {
+  const H = TANK_H, g = new THREE.Group(), turret = new THREE.Group();
+  g.add(shadowMesh(5.2, 9.5));
+  for (const sx of [-1, 1]) {
+    g.add(sideExtrude([[-3.62, 0.36], [-3.3, 0.04], [3.25, 0.04], [3.7, 0.44], [3.42, 0.82], [-3.42, 0.82]], 0.64, MAT.track, sx * 1.47));
+    for (let i = 0; i < 6; i++) { const w = cyl(0.33, 0.33, 0.12, MAT.wheel, 14); w.rotation.z = Math.PI / 2; g.add(at3(w, sx * 1.81, 0.38, -2.55 + i * 1.02)); }
+    g.add(at3(new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.42, 6.3), MAT.hull), sx * 1.82, 0.74, 0.1));
+  }
+  g.add(sideExtrude([[-3.5, 0.42], [3.15, 0.42], [3.78, 0.92], [2.55, 1.42], [-3.42, 1.42], [-3.55, 0.6]], 2.3, MAT.hull));
+  g.add(sideExtrude([[-3.48, 0.92], [3.3, 0.92], [2.55, 1.42], [-3.42, 1.42]], 3.55, MAT.hull));
+  const roof = 2.10;
+  turret.add(topExtrude([[-1.15, -1.95], [1.15, -1.95], [1.55, -0.45], [1.42, 1.25], [0.62, 2.0], [-0.62, 2.0], [-1.42, 1.25], [-1.55, -0.45]], 1.42, roof - 1.42, MAT.hull));
+  turret.add(at3(new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.42, 0.7), MAT.hull), 0, 1.72, 2.25));             // bustle
+  turret.add(at3(cyl(0.32, 0.34, H - roof, MAT.steel, 12), 0.55, roof + (H - roof) / 2, 0.55));              // cupola: top at H
+  turret.add(at3(cyl(0.22, 0.24, 0.1, MAT.steel, 10), -0.6, roof + 0.05, 0.4));
+  turret.add(at3(new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.5, 0.45), MAT.hull), 0, 1.78, -2.1));          // mantlet
+  const gun = cyl(0.075, 0.095, 5.5, MAT.steel, 12); gun.rotation.x = Math.PI / 2; turret.add(at3(gun, 0, 1.78, -5.0));
+  const evac = cyl(0.135, 0.135, 0.85, MAT.steel, 12); evac.rotation.x = Math.PI / 2; turret.add(at3(evac, 0, 1.78, -4.4));
+  const muz = cyl(0.11, 0.11, 0.25, MAT.steel, 12); muz.rotation.x = Math.PI / 2; turret.add(at3(muz, 0, 1.78, -7.65));
+  g.add(turret);
+  return { group: g, turret, boxes: [[-1.85, 0, -3.8, 1.85, 1.42, 3.6], [-1.6, 1.42, -2.2, 1.6, H, 2.6]], h: H };
+}
+function makeWheeled() {
+  const H = TANK_H, g = new THREE.Group(), turret = new THREE.Group();
+  g.add(shadowMesh(3.8, 8));
+  g.add(sideExtrude([[-3.05, 0.62], [2.75, 0.62], [3.3, 1.08], [2.35, 1.8], [-3.05, 1.8]], 2.5, MAT.hull));
+  for (const sx of [-1, 1]) for (const z of [-2.0, -0.4, 1.9]) { const w = cyl(0.55, 0.55, 0.4, MAT.tyre, 16); w.rotation.z = Math.PI / 2; g.add(at3(w, sx * 1.2, 0.55, z)); }
+  turret.add(at3(new THREE.Mesh(new THREE.BoxGeometry(1.4, H - 1.8, 1.6), MAT.hull), 0, 1.8 + (H - 1.8) / 2, 0.2));
+  const gun = cyl(0.04, 0.05, 1.7, MAT.steel, 8); gun.rotation.x = Math.PI / 2; turret.add(at3(gun, 0, 2.0, -1.4));
+  g.add(turret);
+  return { group: g, turret, boxes: [[-1.45, 0, -3.3, 1.45, 1.8, 3.1], [-0.75, 1.8, -0.7, 0.75, H, 1.1]], h: H };
 }
 let targets = [], tid = 0;
 function addTarget(kind, range, azDeg, opts = {}) {
-  const a = azDeg * Math.PI / 180;
-  const obj = new THREE.Group(), boards = [], boxes = [];
-  if (kind === 'infantry') {
-    for (const dx of [-5, -2.5, 0, 2.5, 5]) { const s = SIL.man(), b = boardGroup(s); b.position.x = dx; obj.add(b); boards.push(b); boxes.push(s.boxes[0].map((v, i) => i % 3 === 0 ? v + dx : v)); }
-  } else {
-    const s = kind === 'truck' ? SIL.truck() : (opts.front ? SIL.tankFront(TANK_H) : SIL.tankSide(TANK_H));
-    const b = boardGroup(s); obj.add(b); boards.push(b); boxes.push(...s.boxes);
-  }
-  const t = { id: ++tid, kind, obj, boards, boxes, perBox: kind === 'infantry', boxAlive: boxes.map(() => true), alive: true, hits: 0,
-    h: kind === 'truck' ? 2.9 : kind === 'infantry' ? 1.75 : TANK_H, yaw: a,
-    pos: new THREE.Vector3(Math.sin(a) * range, 0, -Math.cos(a) * range), speed: opts.speed || 0, travel: opts.travel || 0, dir: 1,
-    born: S.time, eng: null, killedAt: null, fall: [] };
+  const a = azDeg * Math.PI / 180, mk = kind === 'wheeled' ? makeWheeled() : makeTank();
+  // facing: 'front' = gun pointing at us, 'side' = broadside, 'oblique' = three-quarter
+  const face = opts.face || 'oblique', yaw = a + (face === 'front' ? Math.PI : face === 'side' ? Math.PI / 2 * (opts.flip ? -1 : 1) : Math.PI * (opts.flip ? 0.75 : 1.25));
+  mk.group.traverse(o => { if (o.isMesh) o.userData.mat0 = o.material; });
+  const t = { id: ++tid, kind, obj: mk.group, turret: mk.turret, boxes: mk.boxes, alive: true, hits: 0, h: mk.h, yaw, yaw0: yaw,
+    pos: new THREE.Vector3(Math.sin(a) * range, 0, -Math.cos(a) * range), speed: opts.speed || 0, travel: opts.travel || 0,
+    born: S.time, eng: null, killedAt: null };
   t.origin = t.pos.clone();
-  if (t.speed) {   // a rail across the line of fire
-    const rail = new THREE.Mesh(new THREE.BoxGeometry(t.travel * 2 + 8, 0.12, 0.6), MAT.rail); rail.position.set(0, 0.06, 0.2); t.rail = rail; scene.add(rail);
-  }
-  if (opts.hullDown) { const b = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2), MAT.berm); b.scale.set(6, 1.45, 2.4); t.berm = b; scene.add(b); }
-  scene.add(obj); place(t); targets.push(t);
+  scene.add(t.obj); place(t); targets.push(t);
   return t;
 }
-function place(t) {
-  t.obj.position.copy(t.pos); t.obj.rotation.y = -t.yaw;
-  if (t.berm) { t.berm.position.set(t.pos.x - Math.sin(t.yaw) * 5, 0, t.pos.z + Math.cos(t.yaw) * 5); t.berm.rotation.y = -t.yaw; }
-  if (t.rail) { t.rail.position.set(t.origin.x, 0.06, t.origin.z); t.rail.rotation.y = -t.yaw; }
+function place(t) { t.obj.position.copy(t.pos); t.obj.rotation.y = -t.yaw; }
+function resetTarget(t) {
+  t.alive = true; t.hits = 0; t.killedAt = null; t.eng = null; t.born = S.time; t.yaw = t.yaw0; t.pos.copy(t.origin);
+  t.obj.traverse(o => { if (o.isMesh && o.userData.mat0) o.material = o.userData.mat0; });
+  t.turret.rotation.set(0, 0, 0); t.turret.position.set(0, 0, 0); place(t);
 }
-function clearTargets() { for (const t of targets) { scene.remove(t.obj); if (t.berm) scene.remove(t.berm); if (t.rail) scene.remove(t.rail); } targets = []; }
+function clearTargets() { for (const t of targets) scene.remove(t.obj); targets = []; }
 const trueRange = t => Math.hypot(t.pos.x - MUZZLE.x, t.pos.z - MUZZLE.z);
 const tName = t => T(t.kind) + ' T' + t.id;
 
@@ -1063,12 +1037,12 @@ function updateFx(dt) {
     f.sp.scale.setScalar(f.size0 + (f.size1 - f.size0) * Math.sqrt(k)); f.sp.material.opacity = f.a0 * (1 - k);
     f.sp.position.y += f.rise * dt; f.sp.position.x += f.drift * dt;
   }
-  // knocked-down boards fall back; destroyed vehicle boards burn and smoke
+  // destroyed targets burn and smoke, then reset after 5 s (free range)
   for (const t of targets) {
-    for (const f of t.fall) { f.k = Math.min(1, f.k + dt * 2.2); f.b.rotation.x = -1.5 * f.k * f.k; }
-    if (!t.alive && t.kind !== 'infantry') {
+    if (!t.alive) {
       const age = S.time - t.killedAt, burning = age < 14;
-      if (burning && S.time - (t.lastFlame || 0) > 0.08) { t.lastFlame = S.time; const p = t.pos.clone(); p.x += (Math.random() - 0.5) * 3; p.z += (Math.random() - 0.5) * 2; p.y = 0.6; puff(p, TEX.flame, 1.4, 3.4, 0.6, { add: true, rise: 3 }); }
+      if (scenario === 'range' && age > 5) { resetTarget(t); continue; }
+      if (burning && S.time - (t.lastFlame || 0) > 0.08) { t.lastFlame = S.time; const p = t.pos.clone(); p.x += (Math.random() - 0.5) * 3; p.z += (Math.random() - 0.5) * 2; p.y = 1.2; puff(p, TEX.flame, 1.4, 3.4, 0.6, { add: true, rise: 3 }); }
       if (age < 40 && S.time - (t.lastSmoke || 0) > (burning ? 0.16 : 0.5)) { t.lastSmoke = S.time; const p = t.pos.clone(); p.y = 1.5; puff(p, TEX.smoke, 2.5, 13, 8, { rise: 4.5, drift: 1.2, alpha: burning ? 0.85 : 0.4 }); }
     }
   }
@@ -1118,8 +1092,7 @@ function updateShells(dt) {
     let best = null;
     for (const t of targets) {
       const l0 = localOf(t.pos, t.yaw, sh.prev), l1 = localOf(t.pos, t.yaw, p);
-      t.boxes.forEach((b, bi) => { if ((t.perBox && !t.boxAlive[bi]) || (!t.perBox && !t.alive)) return; const u = segBox(l0, l1, b); if (u !== null && (!best || u < best.u)) best = { u, t, bi }; });
-      if (t.berm) { const u = segBox(localOf(t.berm.position, t.yaw, sh.prev), localOf(t.berm.position, t.yaw, p), [-6, 0, -2.4, 6, 1.4, 2.4]); if (u !== null && (!best || u < best.u)) best = { u, t, berm: true }; }
+      t.boxes.forEach((b, bi) => { if (!t.alive) return; const u = segBox(l0, l1, b); if (u !== null && (!best || u < best.u)) best = { u, t, bi }; });
     }
     const gh = groundH(p.x, p.z); let gu = null;
     if (p.y <= gh) { const g0 = sh.prev.y - groundH(sh.prev.x, sh.prev.z); gu = g0 / (g0 - (p.y - gh)); }
@@ -1132,7 +1105,7 @@ function removeShell(i) { const sh = shells[i]; scene.remove(sh.sp); sh.sp.mater
 function angOf(p) { const v = p.clone().sub(MUZZLE); return { az: Math.atan2(v.x, -v.z), el: Math.atan2(v.y, Math.hypot(v.x, v.z)) }; }
 function extent(t) {
   let a0 = 1e9, a1 = -1e9; const c = Math.cos(t.yaw), s = Math.sin(t.yaw);
-  for (const b of t.boxes) for (const x of [b[0], b[3]]) { const w = new THREE.Vector3(t.pos.x + x * c, 0, t.pos.z + x * s), a = angOf(w); a0 = Math.min(a0, a.az); a1 = Math.max(a1, a.az); }
+  for (const b of t.boxes) for (const x of [b[0], b[3]]) for (const z of [b[2], b[5]]) { const w = new THREE.Vector3(t.pos.x + x * c - z * s, 0, t.pos.z + x * s + z * c), a = angOf(w); a0 = Math.min(a0, a.az); a1 = Math.max(a1, a.az); }
   const top = t.pos.clone(); top.y = t.h; const bot = t.pos.clone();
   return { a0, a1, e0: angOf(bot).el, e1: angOf(top).el };
 }
@@ -1165,26 +1138,18 @@ function finishShell(sh, hp, hitT, info) {
   if (near) engage(near, sh, kind);
   S.lastRec = rec; renderResult(rec, main);
 }
-function splash(hp) {
-  for (const t of targets) if (t.kind === 'infantry' && t.alive) t.boxes.forEach((b, bi) => {
-    if (!t.boxAlive[bi]) return; const w = t.obj.localToWorld(new THREE.Vector3((b[0] + b[3]) / 2, 0, 0)); if (w.distanceTo(hp) < 9) knockBox(t, bi);
-  });
-}
-function knockBox(t, bi) {
-  t.boxAlive[bi] = false; t.fall.push({ b: t.boards[bi], k: 0 }); t.boards[bi].traverse(o => { if (o.isMesh && o.material === MAT.board) o.material = MAT.dead; });
-  if (t.boxAlive.every(a => !a)) { t.alive = false; t.killedAt = S.time; S.kills++; renderScore(); }
-}
+function splash(hp) {}
 function applyHit(t, round, info, hp) {
   t.hits++;
-  if (t.kind === 'infantry') { knockBox(t, info.bi); return; }
-  if (round === 'COAX') { puff(hp, TEX.flash, 0.3, 0.8, 0.12, { add: true }); if (t.kind === 'truck' && t.hits >= 6) kill(t); return; }
+  if (round === 'COAX') { puff(hp, TEX.flash, 0.3, 0.8, 0.12, { add: true }); if (t.kind === 'wheeled' && t.hits >= 5) kill(t); return; }
   kill(t);
 }
 function kill(t) {
   if (!t.alive) return;
-  t.alive = false; t.speed = 0; t.killedAt = S.time; S.kills++; renderScore();
-  for (const b of t.boards) { t.fall.push({ b, k: 0 }); b.traverse(o => { if (o.isMesh && o.material === MAT.board) o.material = MAT.dead; }); }
-  const p = t.pos.clone(); p.y = t.h * 0.6;
+  t.alive = false; t.killedAt = S.time; S.kills++; renderScore();
+  t.obj.traverse(o => { if (o.isMesh && !o.userData.keep) o.material = MAT.dead; });
+  t.turret.rotation.set(0.12, 0.45, 0.08); t.turret.position.set(0.35, 0.18, 0.25);
+  const p = t.pos.clone(); p.y = t.h * 0.7;
   puff(p, TEX.flash, 6, 22, 0.6, { add: true }); puff(p, TEX.flame, 5, 14, 1.4, { add: true, rise: 4 });
   for (let i = 0; i < 6; i++) puff(p.clone().add(new THREE.Vector3((Math.random() - .5) * 6, Math.random() * 3, (Math.random() - .5) * 6)), TEX.smoke, 4, 16, 4 + Math.random() * 3, { rise: 5, alpha: 0.9 });
 }
@@ -1235,7 +1200,7 @@ function engage(t, sh, kind) {
   renderEng();
   if (kind === 'kill' && (scenario === 'stationary' || scenario === 'moving')) {
     setPrompt(T('p_destroyed', { n: e.rounds, s: fmt(e.hit, 1) }));
-    clearTimeout(nextTimer); nextTimer = setTimeout(nextTarget, 4000);
+    clearTimeout(nextTimer); nextTimer = setTimeout(nextTarget, 5000);
   }
 }
 let nextTimer = null;
@@ -1250,36 +1215,51 @@ let scenario = 'range', promptKey = 'p_range';
 function setPrompt(html) { document.getElementById('prompt').innerHTML = html; }
 const pick = a => a[Math.floor(Math.random() * a.length)];
 const jit = (v, j) => Math.round(v + (Math.random() - 0.5) * 2 * j);
-const FREE_LAYOUT = [['tank', 300, -6, {}], ['tank', 600, 5, { front: true }], ['tank', 800, -12, {}], ['tank', 1000, 9, {}], ['tank', 1300, -3, { front: true }], ['tank', 1650, 2.5, {}],
-  ['tank', 2000, -8, {}], ['tank', 2400, 6.5, { front: true }], ['tank', 2900, -1.5, {}], ['truck', 450, 13, {}], ['truck', 1100, -14.5, {}],
-  ['infantry', 250, -2.5, {}], ['infantry', 550, 11, {}], ['infantry', 900, -9.5, {}], ['tank', 1500, 12.5, { hullDown: true }]];
+const FREE_LAYOUT = [
+  ['tank', 300, -7, { face: 'oblique' }], ['wheeled', 400, 9, { face: 'side' }], ['tank', 450, 2.5, { face: 'front' }], ['tank', 600, -13, { face: 'side', flip: true }],
+  ['wheeled', 700, -2.5, { face: 'oblique', flip: true }], ['tank', 750, 14, { face: 'oblique' }], ['tank', 900, 5.5, { face: 'side' }], ['wheeled', 1000, -9, { face: 'front' }],
+  ['tank', 1100, 11, { face: 'front' }], ['tank', 1250, -4.5, { face: 'oblique', flip: true }], ['wheeled', 1300, 16, { face: 'side', flip: true }], ['tank', 1450, 0.8, { face: 'side' }],
+  ['tank', 1650, -15, { face: 'oblique' }], ['tank', 1850, 7.5, { face: 'front' }], ['tank', 2050, -6.5, { face: 'side' }], ['tank', 2350, 3.5, { face: 'oblique', flip: true }],
+  ['tank', 2700, -10.5, { face: 'front' }], ['tank', 3100, 12.5, { face: 'side' }], ['tank', 2900, -1.8, { face: 'oblique' }]];
+const MOVERS = [[850, -1.2, 20], [1700, 9.5, 30]];
 function nextTarget() {
-  clearTimeout(nextTimer); clearTargets();
-  const azNow = S.az * 180 / Math.PI, r = (a, b) => a + Math.random() * (b - a);
+  clearTimeout(nextTimer); clearTargets(); document.getElementById('estResult').hidden = true;
+  const azNow = S.az * 180 / Math.PI, r = (a, b) => a + Math.random() * (b - a), face = () => pick(['front', 'side', 'oblique']);
   if (scenario === 'range') {
     for (const [k, R, a, o] of FREE_LAYOUT) addTarget(k, R, a, o);
-    addTarget('tank', 700, -0.8, { speed: 20 / 3.6, travel: 110 });
+    for (const [R, a, v] of MOVERS) addTarget('tank', R, a, { face: 'side', speed: v / 3.6, travel: 120 });
     promptKey = 'p_range';
   } else if (scenario === 'estimate') {
-    addTarget('tank', jit(pick([600, 700, 800, 1000, 1200, 1400, 1600, 1800, 2000]), 60), azNow + r(-1.5, 1.5), { front: Math.random() < 0.4 }); promptKey = 'p_estimate';
+    addTarget('tank', jit(pick([600, 700, 800, 1000, 1200, 1400, 1600, 1800, 2000]), 60), azNow + r(-1.5, 1.5), { face: face(), flip: Math.random() < 0.5 }); promptKey = 'p_estimate';
   } else if (scenario === 'stationary') {
-    addTarget(Math.random() < 0.85 ? 'tank' : 'truck', jit(pick([300, 400, 500, 600, 700, 800, 1000, 1200, 1400, 1600, 1800, 2000, 2300, 2600, 3000]), 40), azNow + r(-2, 2), { front: Math.random() < 0.4 }); promptKey = 'p_stationary';
+    addTarget(Math.random() < 0.8 ? 'tank' : 'wheeled', jit(pick([300, 400, 500, 600, 700, 800, 1000, 1200, 1400, 1600, 1800, 2000, 2300, 2600, 3000]), 40), azNow + r(-2, 2), { face: face(), flip: Math.random() < 0.5 }); promptKey = 'p_stationary';
   } else {
-    const t = addTarget('tank', jit(pick([300, 500, 700, 900, 1200, 1500, 1800]), 40), azNow + r(-1.5, 1.5), { speed: r(10, 35) / 3.6, travel: 200 }); t.dir = Math.random() < 0.5 ? 1 : -1; promptKey = 'p_moving';
+    addTarget('tank', jit(pick([300, 500, 700, 900, 1200, 1500, 1800]), 40), azNow + r(-1.5, 1.5), { face: 'side', flip: Math.random() < 0.5, speed: r(10, 35) / 3.6, travel: 200 }); promptKey = 'p_moving';
   }
   setPrompt(T(promptKey));
 }
+// the measured target is the one sitting in (or nearest) the range estimator; otherwise the one nearest the aim column
+let estMark = null;
 function checkEstimate() {
-  const est = parseFloat(document.getElementById('estimate').value);
-  if (!isFinite(est)) { setPrompt(T('p_needEst')); return; }
+  const est = parseFloat(document.getElementById('estimate').value), box = document.getElementById('estResult');
+  box.hidden = false;
+  if (!isFinite(est)) { box.innerHTML = `<div class="s">${T('p_needEst')}</div>`; return; }
+  const sx0 = 4.5, sx1 = 18.4, sy0 = -4.6, sy1 = 0.4;
   let best = null, bd = 1e9;
-  for (const x of targets) { const c = x.pos.clone(); c.y = 1; const a = angOf(c), d = Math.hypot(a.az - S.az, a.el - (S.el - 0.04)); if (d < bd) { bd = d; best = x; } }
-  if (!best) return;
+  for (const x of targets) {
+    const c = x.pos.clone(); c.y = x.h / 2; const q = toReticle(c); if (!q) continue;
+    const dS = Math.hypot(Math.max(sx0 - q.x, 0, q.x - sx1), Math.max(sy0 - q.y, 0, q.y - sy1));
+    const dC = Math.hypot(Math.max(Math.abs(q.x - 1) - 2, 0), Math.max(-6 - q.y, 0, q.y - 80));
+    const d = Math.min(dS, dC + 4);
+    if (d < bd) { bd = d; best = x; }
+  }
+  if (!best || bd > 12) { box.innerHTML = `<div class="s">${T('estNone')}</div>`; return; }
   const R = trueRange(best), err = (est - R) / R * 100, good = Math.abs(err) <= 10;
-  setPrompt(T('p_est', { t: tName(best), R: fmt(R), E: fmt(est), p: fmt(Math.abs(err)), dir: T(err >= 0 ? 'estLong' : 'estShort'),
-    v: `<b style="color:var(${good ? '--ok' : '--bad'})">${T(good ? 'estGood' : 'estBad')}</b>` }));
+  const head = Math.abs(err) < 0.5 ? T('estExact') : T('estHead', { p: fmt(Math.abs(err)), dir: T(err >= 0 ? 'estLong' : 'estShort') });
+  box.innerHTML = `<div class="v ${good ? 'ok' : 'bad'}">${good ? '✓ ' : '✗ '}${head}</div><div class="s">${T('estSub', { t: tName(best), R: fmt(R), E: fmt(est) })}</div><div>${T(good ? 'estGood' : 'estBad')}</div>`;
+  estMark = { t: best, until: S.time + 3 };
   engagements.push({ n: engagements.length + 1, label: 'T' + best.id + ' (estimate)', range: R, est, rounds: 0, first: null, hit: null }); renderEng();
-  if (scenario === 'estimate') { clearTimeout(nextTimer); nextTimer = setTimeout(nextTarget, 4000); }
+  if (scenario === 'estimate') { clearTimeout(nextTimer); nextTimer = setTimeout(nextTarget, 5000); }
 }
 
 // ---------------------------------------------------------------- view mapping
@@ -1309,6 +1289,8 @@ const LAYERS = {
   Coax: { key: 'C', color: '--c-coax', badge: [-20.5, 60.4] }, Lead: { key: 'L', color: '--c-lead', badge: [-11.8, 55.6] }, Unknown: { key: '?', color: '--c-unk', badge: [1.9, 80.5] }
 };
 const INK = { Zero: '#111111', Stadia: '#6d2fb8', FIN: '#1f4fb0', HESH: '#bf520c', Coax: '#08795a', Lead: '#4a5260', Unknown: '#c42a18' };
+// explain-mode colours: bright, on a thin dark outline, so they read on the terrain without a white wash
+const INK_X = { Zero: '#ffffff', Stadia: '#c39bff', FIN: '#7fb0ff', HESH: '#ffa04d', Coax: '#4ff0c0', Lead: '#e4e8ee', Unknown: '#ff7360' };
 function primCenter(p) { return p.prim === 'line' || p.prim === 'textbox' ? { x: (p.x1 + p.x2) / 2, y: (p.y1 + p.y2) / 2 } : { x: p.x1, y: p.y1 }; }
 function primDist(p, x, y) {
   if (p.prim === 'line') { const dx = p.x2 - p.x1, dy = p.y2 - p.y1, L = dx * dx + dy * dy, u = L ? Math.max(0, Math.min(1, ((x - p.x1) * dx + (y - p.y1) * dy) / L)) : 0; return Math.hypot(x - (p.x1 + u * dx), y - (p.y1 + u * dy)); }
@@ -1373,43 +1355,52 @@ function drawOverlay(M) {
     c.lineWidth = 1;
     for (let x = x0; x <= x1; x++) { c.strokeStyle = x % 5 === 0 ? 'rgba(40,90,160,.45)' : 'rgba(40,90,160,.15)'; c.beginPath(); c.moveTo(M.px(x), 0); c.lineTo(M.px(x), SZ); c.stroke(); }
     for (let y = y0; y <= y1; y++) { c.strokeStyle = y % 5 === 0 ? 'rgba(40,90,160,.45)' : 'rgba(40,90,160,.15)'; c.beginPath(); c.moveTo(0, M.py(y)); c.lineTo(SZ, M.py(y)); c.stroke(); }
-    c.fillStyle = 'rgba(30,70,130,.9)'; c.font = `500 ${Math.max(9, ppm * 0.8)}px IBM Plex Mono, monospace`; c.textAlign = 'left'; c.textBaseline = 'alphabetic';
+    c.fillStyle = 'rgba(30,70,130,.9)'; c.font = `500 ${Math.max(9, ppm * 0.8)}px JetBrains Mono, monospace`; c.textAlign = 'left'; c.textBaseline = 'alphabetic';
     for (let y = Math.ceil(y0 / 5) * 5; y <= y1; y += 5) c.fillText(String(y), M.px(v.cx - v.r * 0.6), M.py(y) - 2);
     for (let x = Math.ceil(x0 / 5) * 5; x <= x1; x += 5) c.fillText(String(x), M.px(x) + 2, M.py(v.cy + v.r * 0.55));
   }
-  if (S.explain) { c.save(); c.beginPath(); c.arc(SZ / 2, SZ / 2, SZ / 2, 0, Math.PI * 2); c.clip(); c.fillStyle = 'rgba(238,240,234,.62)'; c.fillRect(0, 0, SZ, SZ); c.restore(); }
   const hl = S.explain && S.hover ? new Set(markCluster(S.hover).map(p => p.id)) : null;
   for (const p of PRIMS) {
     let col = '#0b0b0a', w = Math.max(1, LINE_W * ppm);
     c.globalAlpha = 1;
-    if (S.explain) { col = INK[p.layer]; if (S.pinLayer && S.pinLayer !== p.layer) c.globalAlpha = 0.22; if (hl && hl.has(p.id)) w *= 2.4; }
-    c.strokeStyle = col; c.fillStyle = col; c.lineWidth = w; c.lineCap = 'butt';
-    if (p.prim === 'line') { c.beginPath(); c.moveTo(M.px(p.x1), M.py(p.y1)); c.lineTo(M.px(p.x2), M.py(p.y2)); c.stroke(); }
-    else if (p.prim === 'circle') { c.beginPath(); c.arc(M.px(p.x1), M.py(p.y1), p.r * ppm, 0, Math.PI * 2); c.stroke(); }
-    else if (p.prim === 'dot') { c.beginPath(); c.arc(M.px(p.x1), M.py(p.y1), Math.max(0.9, DOT_D / 2 * ppm * (hl && hl.has(p.id) ? 2 : 1)), 0, Math.PI * 2); c.fill(); }
-    else {
-      const h = (p.y2 - p.y1) * ppm, bold = p.layer === 'HESH' && ['10', '20', '30'].includes(p.text);
-      c.font = `${bold ? 700 : 400} ${h * 1.12}px Arial, Helvetica, sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle';
-      c.fillText(p.text, M.px((p.x1 + p.x2) / 2), M.py((p.y1 + p.y2) / 2) + h * 0.04);
+    if (S.explain) { col = INK_X[p.layer]; if (S.pinLayer && S.pinLayer !== p.layer) c.globalAlpha = 0.22; if (hl && hl.has(p.id)) w *= 2.4; }
+    const passes = S.explain ? [['rgba(0,0,0,.55)', w + 1.6], [col, w]] : [[col, w]];
+    for (const [pc, pw] of passes) {
+      const halo = passes.length > 1 && pc !== col;
+      c.strokeStyle = pc; c.fillStyle = pc; c.lineWidth = pw; c.lineCap = 'butt';
+      if (p.prim === 'line') { c.beginPath(); c.moveTo(M.px(p.x1), M.py(p.y1)); c.lineTo(M.px(p.x2), M.py(p.y2)); c.stroke(); }
+      else if (p.prim === 'circle') { c.beginPath(); c.arc(M.px(p.x1), M.py(p.y1), p.r * ppm, 0, Math.PI * 2); c.stroke(); }
+      else if (p.prim === 'dot') { c.beginPath(); c.arc(M.px(p.x1), M.py(p.y1), Math.max(0.9, DOT_D / 2 * ppm * (hl && hl.has(p.id) ? 2 : 1)) + (halo ? 1 : 0), 0, Math.PI * 2); c.fill(); }
+      else {
+        const h = (p.y2 - p.y1) * ppm, bold = p.layer === 'HESH' && ['10', '20', '30'].includes(p.text);
+        c.font = `${bold ? 700 : 400} ${h * 1.12}px Arial, Helvetica, sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle';
+        const X = M.px((p.x1 + p.x2) / 2), Y = M.py((p.y1 + p.y2) / 2) + h * 0.04;
+        if (halo) { c.lineWidth = 2; c.lineJoin = 'round'; c.strokeText(p.text, X, Y); } else c.fillText(p.text, X, Y);
+      }
     }
   }
   c.globalAlpha = 1;
   if (S.explain) for (const [k, L] of Object.entries(LAYERS)) {
     const x = M.px(L.badge[0]), y = M.py(L.badge[1]), r = Math.max(8, ppm * 1.05);
     c.fillStyle = INK[k]; c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.fill(); c.strokeStyle = 'rgba(0,0,0,.5)'; c.lineWidth = 1; c.stroke();
-    c.fillStyle = '#fff'; c.font = `700 ${r * 1.1}px IBM Plex Sans Condensed, sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(L.key, x, y + 0.5);
+    c.fillStyle = '#fff'; c.font = `700 ${r * 1.1}px Inter, sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(L.key, x, y + 0.5);
+  }
+  if (estMark && S.time < estMark.until) {
+    const tg = estMark.t, b = tg.pos.clone(), tp = tg.pos.clone(); tp.y = tg.h; const q0 = toReticle(b), q1 = toReticle(tp);
+    if (q0 && q1) { const ex = extent(tg), half = Math.max(2.5, (ex.a1 - ex.a0) * 500 + 0.6); c.strokeStyle = 'rgba(255,214,90,.95)'; c.lineWidth = 2; c.setLineDash([5, 4]);
+      c.strokeRect(M.px(q0.x - half), M.py(q1.y - 0.6), M.px(q0.x + half) - M.px(q0.x - half), M.py(q0.y + 0.6) - M.py(q1.y - 0.6)); c.setLineDash([]); }
   }
   if (S.dev) {
     const r = S.ammo, tb = TAB[r][S.mode];
     c.strokeStyle = 'rgba(200,30,160,.9)'; c.lineWidth = 1.4; c.setLineDash([4, 3]); c.beginPath();
     for (let s = 50; s <= 3600; s += 25) { const X = M.px(at(tb.X, s)), Y = M.py(at(tb.Y, s)); s === 50 ? c.moveTo(X, Y) : c.lineTo(X, Y); }
     c.stroke(); c.setLineDash([]);
-    c.fillStyle = 'rgba(200,30,160,.95)'; c.font = `600 ${Math.max(9, ppm * 0.8)}px IBM Plex Mono, monospace`; c.textAlign = 'left'; c.textBaseline = 'middle';
+    c.fillStyle = 'rgba(200,30,160,.95)'; c.font = `600 ${Math.max(9, ppm * 0.8)}px JetBrains Mono, monospace`; c.textAlign = 'left'; c.textBaseline = 'middle';
     for (let s = 500; s <= 3500; s += 500) { const x = at(tb.X, s), y = at(tb.Y, s); c.beginPath(); c.arc(M.px(x), M.py(y), 2.5, 0, Math.PI * 2); c.fill(); c.fillText(String(s / 100), M.px(x) + 5, M.py(y)); }
     for (const t of targets) {
       const top = t.pos.clone(); top.y = t.h + 1.5; const q = toReticle(top); if (!q) continue;
       const X = M.px(q.x), Y = M.py(q.y); if (X < 0 || X > SZ || Y < 0 || Y > SZ) continue;
-      c.fillStyle = 'rgba(255,255,255,.92)'; c.strokeStyle = 'rgba(0,0,0,.6)'; c.lineWidth = 3; c.font = `600 ${Math.max(10, ppm * 0.8)}px IBM Plex Mono, monospace`;
+      c.fillStyle = 'rgba(255,255,255,.92)'; c.strokeStyle = 'rgba(0,0,0,.6)'; c.lineWidth = 3; c.font = `600 ${Math.max(10, ppm * 0.8)}px JetBrains Mono, monospace`;
       const txt = `T${t.id} ${fmt(trueRange(t))} m${t.speed ? ' ' + fmt(t.speed * 3.6) + ' km/h' : ''}`; c.strokeText(txt, X + 4, Y - 6); c.fillText(txt, X + 4, Y - 6);
     }
   }
@@ -1536,9 +1527,11 @@ function frame(now) {
   if (S.reload > 0) { S.reload -= dt; if (S.reload <= 0) { S.reload = 0; S.loaded = S.reloadFor; } }
   S.coaxCool -= dt; if (S.firing && S.ammo === 'COAX' && S.coaxCool <= 0) { fire('COAX'); S.coaxCool = 0.085; }
   for (const t of targets) if (t.speed && t.alive) {
-    const step = t.speed * dt * t.dir; t.pos.x += Math.cos(t.yaw) * step; t.pos.z += Math.sin(t.yaw) * step;
-    if (t.pos.distanceTo(t.origin) > t.travel) t.dir *= -1;
-    t.obj.position.copy(t.pos); t.obj.scale.x = t.dir < 0 ? -1 : 1;
+    const fx_ = Math.sin(t.yaw), fz = -Math.cos(t.yaw);
+    t.pos.x += fx_ * t.speed * dt; t.pos.z += fz * t.speed * dt;
+    const away = (t.pos.x - t.origin.x) * fx_ + (t.pos.z - t.origin.z) * fz;
+    if (away > t.travel) t.yaw += Math.PI;
+    place(t);
   }
   updateShells(dt); updateFx(dt);
   S.blastA = Math.max(0, S.blastA - dt * 1.1); document.getElementById('blast').style.opacity = S.blastA.toFixed(3);
@@ -1562,9 +1555,6 @@ function frame(now) {
 
 // ---------------------------------------------------------------- boot
 document.getElementById('hRef').textContent = TANK_H.toFixed(2);
-for (const [, R, a] of FREE_LAYOUT) { const r = a * Math.PI / 180; LAYOUT_SPOTS.push([Math.sin(r) * R, -Math.cos(r) * R]); }
-for (let x = -130; x <= 130; x += 20) { const r = -0.8 * Math.PI / 180; LAYOUT_SPOTS.push([Math.sin(r) * 700 + x, -Math.cos(r) * 700]); }
-buildVegetation();
 syncParams(); rebuild(); renderEng(); resize(); nextTarget(); applyLang();
 requestAnimationFrame(t => { last = t; frame(t); });
 </script>
